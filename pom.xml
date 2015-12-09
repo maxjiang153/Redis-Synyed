@@ -1,0 +1,64 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.wmz7year</groupId>
+	<artifactId>Redis-Synyed</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>pom</packaging>
+
+	<name>Redis-Synyed</name>
+	<url>https://github.com/wmz7year/Redis-Synyed</url>
+
+	<description>Redis跨机房同步系统</description>
+	<inceptionYear>2015</inceptionYear>
+
+	<properties>
+		<!-- project settings -->
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<java.version>1.7</java.version>
+		<maven.compiler.source>1.7</maven.compiler.source>
+		<maven.compiler.target>1.7</maven.compiler.target>
+		<!-- dependencies version -->
+		<junit.version>3.8.1</junit.version>
+	</properties>
+
+	<developers>
+		<developer>
+			<name>Jiang wei</name>
+			<email>ydswcy513@gmail.com</email>
+		</developer>
+	</developers>
+
+	<scm>
+		<connection>
+         scm:git:https://github.com/wmz7year/Redis-Synyed.git
+     	 </connection>
+		<developerConnection>
+         scm:git:https://github.com/wmz7year/Redis-Synyed.git
+     	</developerConnection>
+		<url>https://github.com/wmz7year/Redis-Synyed</url>
+		<tag>HEAD</tag>
+	</scm>
+
+	<issueManagement>
+		<system>GitHub Issues</system>
+		<url>https://github.com/wmz7year/Redis-Synyed/issues</url>
+	</issueManagement>
+
+	<licenses>
+		<license>
+			<name>The Apache License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		</license>
+	</licenses>
+
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${junit.version}</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+</project>
