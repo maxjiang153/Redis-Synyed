@@ -20,6 +20,8 @@
 		<maven.compiler.source>1.7</maven.compiler.source>
 		<maven.compiler.target>1.7</maven.compiler.target>
 		<!-- dependencies version -->
+		<spring.boot.version>1.2.7.RELEASE</spring.boot.version>
+		<mina.version>2.0.9</mina.version>
 		<junit.version>3.8.1</junit.version>
 	</properties>
 
@@ -55,6 +57,67 @@
 
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-parent</artifactId>
+				<version>${spring.boot.version}</version>
+				<scope>import</scope>
+				<type>pom</type>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.mina</groupId>
+				<artifactId>mina-core</artifactId>
+				<version>${mina.version}</version>
+				<type>jar</type>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.mina</groupId>
+				<artifactId>mina-integration-beans</artifactId>
+				<version>${mina.version}</version>
+				<type>jar</type>
+				<exclusions>
+					<exclusion>
+						<groupId>org.apache.mina</groupId>
+						<artifactId>mina-core</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.mina</groupId>
+				<artifactId>mina-integration-ognl</artifactId>
+				<version>${mina.version}</version>
+				<type>jar</type>
+				<exclusions>
+					<exclusion>
+						<groupId>org.apache.mina</groupId>
+						<artifactId>mina-core</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.apache.mina</groupId>
+						<artifactId>mina-integration-beans</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.mina</groupId>
+				<artifactId>mina-integration-jmx</artifactId>
+				<version>${mina.version}</version>
+				<type>jar</type>
+				<exclusions>
+					<exclusion>
+						<groupId>org.apache.mina</groupId>
+						<artifactId>mina-core</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.apache.mina</groupId>
+						<artifactId>mina-integration-beans</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.apache.mina</groupId>
+						<artifactId>mina-integration-ognl</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
 			<dependency>
 				<groupId>junit</groupId>
 				<artifactId>junit</artifactId>
