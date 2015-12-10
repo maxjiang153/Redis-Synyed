@@ -22,7 +22,7 @@
 		<!-- dependencies version -->
 		<spring.boot.version>1.2.7.RELEASE</spring.boot.version>
 		<mina.version>2.0.9</mina.version>
-		<junit.version>3.8.1</junit.version>
+		<junit.version>4.12</junit.version>
 	</properties>
 
 	<developers>
