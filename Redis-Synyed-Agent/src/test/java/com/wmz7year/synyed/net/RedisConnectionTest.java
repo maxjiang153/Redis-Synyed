@@ -37,12 +37,28 @@ public class RedisConnectionTest {
 	private int port = 6380;
 
 	/**
+	 * 密码
+	 */
+	private String password = "password";
+
+	/**
 	 * 测试连接到redis
 	 */
 	@Test
 	public void testConnectRedis() throws Exception {
 		RedisConnection connection = new DefaultRedisConnection();
 		connection.connect(host, port, 5000);
+		connection.close();
+		assertTrue(true);
+	}
+
+	/**
+	 * 测试连接到redis 使用密码
+	 */
+	@Test
+	public void testConnectUsingPasswordRedis() throws Exception {
+		RedisConnection connection = new DefaultRedisConnection();
+		connection.connect(host, port, password, 5000);
 		connection.close();
 		assertTrue(true);
 	}

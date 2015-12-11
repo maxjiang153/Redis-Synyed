@@ -1,6 +1,10 @@
 package com.wmz7year.synyed.net.spi;
 
 import static com.wmz7year.synyed.constant.RedisProtocolConstant.REDIS_PROTOCOL_PARSER;
+import static com.wmz7year.synyed.constant.RedisCommandSymbol.AUTH;
+import static com.wmz7year.synyed.constant.RedisCommandSymbol.ERR;
+import static com.wmz7year.synyed.constant.RedisCommandSymbol.OK;
+import static com.wmz7year.synyed.constant.RedisCommandSymbol.PING;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -22,6 +26,7 @@ import com.wmz7year.synyed.exception.RedisProtocolException;
 import com.wmz7year.synyed.net.RedisConnection;
 import com.wmz7year.synyed.net.proroc.RedisProtocolCodecFactory;
 import com.wmz7year.synyed.net.proroc.RedisProtocolParser;
+import com.wmz7year.synyed.packet.redis.RedisErrorPacket;
 import com.wmz7year.synyed.packet.redis.RedisPacket;
 
 /**
@@ -107,7 +112,6 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 	@Override
 	public void sessionClosed(IoSession session) throws Exception {
 		isConnected.set(false);
-		// TODO Auto-generated method stub
 		super.sessionClosed(session);
 	}
 
@@ -118,8 +122,8 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 	 */
 	@Override
 	public void sessionIdle(IoSession session, IdleStatus status) throws Exception {
-		// TODO Auto-generated method stub
-		super.sessionIdle(session, status);
+		// 发送ping命令
+		sendCommand(PING);
 	}
 
 	/*
@@ -129,8 +133,7 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 	 */
 	@Override
 	public void exceptionCaught(IoSession session, Throwable cause) throws Exception {
-		// TODO Auto-generated method stub
-		super.exceptionCaught(session, cause);
+		logger.error("Redis连接：" + this.address + " 端口：" + this.port + "出现异常", cause);
 	}
 
 	/*
@@ -189,7 +192,15 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 
 		// 如果密码不为空则执行登录操作
 		if (password != null) {
-			// TODO redis auth登录命令
+			RedisPacket response = sendCommand(AUTH, this.password);
+			if (response.getCommand().equals(OK)) {
+				return true;
+			} else if (response.getCommand().equals(ERR)) {
+				RedisErrorPacket errorResponse = (RedisErrorPacket) response;
+				throw new RedisProtocolException(errorResponse.getErrorMessage());
+			} else {
+				throw new RedisProtocolException("发生未知错误");
+			}
 		}
 		return true;
 	}
@@ -218,10 +229,11 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 
 	/*
 	 * @see
-	 * com.wmz7year.synyed.net.RedisConnection#sendCommand(java.lang.String)
+	 * com.wmz7year.synyed.net.RedisConnection#sendCommand(java.lang.String,
+	 * java.lang.String[])
 	 */
 	@Override
-	public RedisPacket sendCommand(String command) throws RedisProtocolException {
+	public RedisPacket sendCommand(String command, String... args) throws RedisProtocolException {
 		if (!isConnected()) {
 			throw new RedisProtocolException("未连接到服务器");
 		}
@@ -230,7 +242,7 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 			// 清空上次响应
 			response = null;
 			// 发送命令到redis服务器
-			this.ioSession.write(command);
+			this.ioSession.write(buildRequestCommand(command, args));
 			// 等待响应
 			long start = System.currentTimeMillis();
 			while (response == null) {
@@ -253,6 +265,25 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 		} finally {
 			lock.unlock();
 		}
+	}
+
+	/**
+	 * 把命令与附带的参数合并为一个完整请求命令的方法
+	 * 
+	 * @param command
+	 *            redis命令
+	 * @param args
+	 *            请求参数列表
+	 * @return 完整的请求命令
+	 */
+	private String buildRequestCommand(String command, String... args) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(command).append(' ');
+		for (String arg : args) {
+			sb.append(arg).append(' ');
+		}
+		String result = sb.substring(0, sb.length() - 1);
+		return result;
 	}
 
 	/*

@@ -61,9 +61,11 @@ public interface RedisConnection extends Closeable {
 	 * 
 	 * @param command
 	 *            需要执行的redis命令
+	 * @param params
+	 *            参数列表
 	 * @return redis响应包
 	 * @throws RedisProtocolException
 	 *             当发生错误时抛出该异常
 	 */
-	public RedisPacket sendCommand(String command) throws RedisProtocolException;
+	public RedisPacket sendCommand(String command, String... params) throws RedisProtocolException;
 }

@@ -1,6 +1,7 @@
 package com.wmz7year.synyed.net.proroc;
 
 import static com.wmz7year.synyed.constant.RedisProtocolConstant.*;
+import static com.wmz7year.synyed.constant.RedisCommandSymbol.*;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.wmz7year.synyed.exception.RedisProtocolException;
+import com.wmz7year.synyed.packet.redis.RedisErrorPacket;
 import com.wmz7year.synyed.packet.redis.RedisPacket;
 import com.wmz7year.synyed.packet.redis.RedisSimpleStringPacket;
 
@@ -191,15 +193,20 @@ public class RedisProtocolParser {
 		for (int i = 0; i < bufferLength; i++) {
 			// 读取第一个字节 该字节为redis协议类型字段
 			byte type = buffer[i];
+			byte[] data = null;
 			switch (type) {
 			case REDIS_PROTOCOL_SIMPLE_STRING:
-				byte[] data = new byte[bufferLength - 1];
+				data = new byte[bufferLength - 1];
 				System.arraycopy(buffer, 1, data, 0, bufferLength - 1);
-				RedisSimpleStringPacket packet = new RedisSimpleStringPacket(new String(data));
-				return packet;
+				RedisSimpleStringPacket simpleStringPacket = new RedisSimpleStringPacket(new String(data));
+				return simpleStringPacket;
 			case REDIS_PROTOCOL_ERRORS:
-				// TODO read error
-				break;
+				data = new byte[bufferLength - 6];
+				// -ERR message
+				System.arraycopy(buffer, 5, data, 0, bufferLength - 6);
+				RedisErrorPacket errorPacket = new RedisErrorPacket(ERR);
+				errorPacket.setErrorMessage(new String(data));
+				return errorPacket;
 			case REDIS_PROTOCOL_INTEGERS:
 				// TODO read integer
 				break;
