@@ -26,4 +26,8 @@ public class RedisCommandSymbol {
 	 * ping命令
 	 */
 	public static final String PING = "PING";
+	/**
+	 * redis 数据传输符号
+	 */
+	public static final String DATABASETRANSFER = "DATABASETRANSFER";
 }

@@ -23,29 +23,30 @@ public class RedisProtocolConstant {
 	/**
 	 * \r byte类型 换行符常量
 	 */
-	public static final byte REDIS_PROTOCOL_R = 0x0D;
+	public static final byte REDIS_PROTOCOL_R = '\r';
 	/**
 	 * \n byte类型 回车符号常量
 	 */
-	public static final byte REDIS_PROTOCOL_N = 0x0A;
+	public static final byte REDIS_PROTOCOL_N = '\n';
 	/**
 	 * redis字符串类型
 	 */
-	public static final byte REDIS_PROTOCOL_SIMPLE_STRING = 0x2B;
+	public static final byte REDIS_PROTOCOL_SIMPLE_STRING = '+';
 	/**
 	 * redis错误类型
 	 */
-	public static final byte REDIS_PROTOCOL_ERRORS = 0x2D;
+	public static final byte REDIS_PROTOCOL_ERRORS = '-';
 	/**
 	 * redis整数类型
 	 */
-	public static final byte REDIS_PROTOCOL_INTEGERS = 0x3A;
+	public static final byte REDIS_PROTOCOL_INTEGERS = ':';
 	/**
 	 * redis 复合字符串类型
 	 */
-	public static final byte REDIS_PROTOCOL_BULK_STRINGS = 0x24;
+	public static final byte REDIS_PROTOCOL_BULK_STRINGS = '$';
 	/**
 	 * redis 数组类型
 	 */
-	public static final byte REDIS_PROTOCOL_ARRAY = 0x2A;
+	public static final byte REDIS_PROTOCOL_ARRAY = '*';
+
 }
