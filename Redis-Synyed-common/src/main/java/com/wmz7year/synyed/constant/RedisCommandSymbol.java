@@ -30,4 +30,8 @@ public class RedisCommandSymbol {
 	 * redis 数据传输符号
 	 */
 	public static final String DATABASETRANSFER = "DATABASETRANSFER";
+	/**
+	 * 整数类型数据包
+	 */
+	public static final String INTEGER = "INTEGER";
 }

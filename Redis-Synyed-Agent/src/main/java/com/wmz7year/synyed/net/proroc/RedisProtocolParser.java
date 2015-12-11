@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import com.wmz7year.synyed.exception.RedisProtocolException;
 import com.wmz7year.synyed.packet.redis.RedisDataBaseTransferPacket;
 import com.wmz7year.synyed.packet.redis.RedisErrorPacket;
+import com.wmz7year.synyed.packet.redis.RedisIntegerPacket;
 import com.wmz7year.synyed.packet.redis.RedisPacket;
 import com.wmz7year.synyed.packet.redis.RedisSimpleStringPacket;
 
@@ -163,11 +164,31 @@ public class RedisProtocolParser {
 		}
 		dataBuffer = null;
 
-		// 开始解析数据包
+		// 解析数据包的方法
 		while (true) {
-			// 判断数据是否读取完了
 			if (!hasData()) {
 				break;
+			}
+			RedisPacket packet = decodePacket();
+			if (packet != null) {
+				this.packets.add(packet);
+			}
+		}
+	}
+
+	/**
+	 * 解析一个数据包的方法<br>
+	 * 当出现分包断包情况时返回null
+	 * 
+	 * @return 解析出的数据包对象
+	 * @throws RedisProtocolException
+	 *             当解析出现异常时抛出该数据包
+	 */
+	private RedisPacket decodePacket() throws RedisProtocolException {
+		try {
+			// 判断数据是否读取完了
+			if (!hasData()) {
+				return null;
 			}
 			// 判断是否有解析中的包 如果没有则初始化一个新的当前包缓冲区
 			if (currentPacket == null) {
@@ -185,14 +206,13 @@ public class RedisProtocolParser {
 			} else if (currentPacketType == REDIS_PROTOCOL_ARRAY) {
 				// TODO 数组类型
 			} else if (currentPacketType == REDIS_PROTOCOL_INTEGERS) {
-				// TODO
+				responsePacket = processIntegerPacket();
 			} else if (currentPacketType == REDIS_PROTOCOL_ERRORS) {
 				responsePacket = processErrorPacket();
 			} else {
 				throw new RedisProtocolException("未知的数据包类型：" + currentPacketType);
 			}
 			if (responsePacket != null) {
-				this.packets.add(responsePacket);
 				// 清空当前处理的数据包
 				cleanCurrentPacket();
 				// 清空当前数据包类型
@@ -206,6 +226,9 @@ public class RedisProtocolParser {
 				// 清空crlf标识位
 				this.bulkCrLfReaded = false;
 			}
+			return responsePacket;
+		} catch (Exception e) {
+			throw new RedisProtocolException(e);
 		}
 	}
 
@@ -278,6 +301,26 @@ public class RedisProtocolParser {
 			return null;
 		}
 
+	}
+
+	/**
+	 * 读取整数类型数据包的方法<br>
+	 * 读取的数据为long形数据
+	 * 
+	 * @return redis数据包对象
+	 */
+	private RedisPacket processIntegerPacket() {
+		// 读取数据
+		readData();
+		// 获取完整数据包
+		byte[] packetData = completCurrentPacket();
+		if (packetData == null) {
+			return null;
+		}
+		long result = Long.parseLong(new String(packetData));
+		RedisIntegerPacket integerPacket = new RedisIntegerPacket(INTEGER);
+		integerPacket.setNum(result);
+		return integerPacket;
 	}
 
 	/**
