@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.wmz7year.synyed.exception.RedisProtocolException;
+import com.wmz7year.synyed.packet.redis.RedisBulkStringPacket;
 import com.wmz7year.synyed.packet.redis.RedisDataBaseTransferPacket;
 import com.wmz7year.synyed.packet.redis.RedisErrorPacket;
 import com.wmz7year.synyed.packet.redis.RedisIntegerPacket;
@@ -270,22 +271,26 @@ public class RedisProtocolParser {
 			return null;
 		}
 
-		// 读取对应字节长度的数据
-		while (true) {
-			// 判断数据是否读取完了
-			if (!hasData()) {
-				break;
-			}
-			byte b = buffer[readFlag++];
-			readedBulkLength++;
-			if (readedBulkLength == bulkLength) {
-				appendToCurrentPacket(b);
-				// 数据读取完了
-				break;
-			} else {
-				appendToCurrentPacket(b);
+		// 只有在有数据的时候读取数据
+		if (result != 0 && !(readedBulkLength == bulkLength)) {
+			// 读取对应字节长度的数据
+			while (true) {
+				// 判断数据是否读取完了
+				if (!hasData()) {
+					break;
+				}
+				byte b = buffer[readFlag++];
+				readedBulkLength++;
+				if (readedBulkLength == bulkLength) {
+					appendToCurrentPacket(b);
+					// 数据读取完了
+					break;
+				} else {
+					appendToCurrentPacket(b);
+				}
 			}
 		}
+		
 		// 未读取完 直接返回 null
 		if (readedBulkLength != bulkLength) {
 			return null;
@@ -319,10 +324,17 @@ public class RedisProtocolParser {
 			packet.setData(packetData);
 			return packet;
 		} else {
-			// TODO bulk
+			// 读取bulk字符串额外的\r\n
+			readData();
+			// 获取完整数据包
+			byte[] packetData = completCurrentPacket();
+			if (packetData == null) {
+				return null;
+			}
+			RedisBulkStringPacket packet = new RedisBulkStringPacket(BULKSTRING);
+			packet.setData(new String(packetData));
+			return packet;
 		}
-
-		return null;
 
 	}
 

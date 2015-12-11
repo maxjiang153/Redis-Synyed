@@ -34,4 +34,8 @@ public class RedisCommandSymbol {
 	 * 整数类型数据包
 	 */
 	public static final String INTEGER = "INTEGER";
+	/**
+	 * 复合类型的字符串
+	 */
+	public static final String BULKSTRING = "BULKSTRING";
 }
