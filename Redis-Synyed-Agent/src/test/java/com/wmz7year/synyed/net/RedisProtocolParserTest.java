@@ -283,4 +283,104 @@ public class RedisProtocolParserTest {
 		assertNull(packets);
 
 	}
+
+	/**
+	 * 测试分包
+	 */
+	@Test
+	public void testSubSimpleStringPacket() throws Exception {
+		String str = "helloworld";
+		StringBuilder redisData = new StringBuilder();
+		redisData.append('+');
+		redisData.append(str);
+		redisData.append(CRLF);
+
+		RedisProtocolParser parser = new RedisProtocolParser();
+		byte[] data = redisData.toString().getBytes();
+		for (int i = 0; i < data.length; i++) {
+			ByteBuffer buf = ByteBuffer.allocate(1);
+			buf.put(data[i]).flip();
+
+			parser.read(buf);
+		}
+
+		RedisPacket[] packets = parser.getPackets();
+
+		assertTrue(packets.length == 1);
+		RedisPacket packet = packets[0];
+		String command = packet.getCommand();
+		assertEquals(command, str);
+
+	}
+
+	/**
+	 * 测试错误类型分包
+	 */
+	@Test
+	public void testSubErrorStringPacket() throws Exception {
+		String str = "helloworld";
+		StringBuilder redisData = new StringBuilder();
+		redisData.append('-');
+		redisData.append(str);
+		redisData.append(CRLF);
+
+		RedisProtocolParser parser = new RedisProtocolParser();
+		byte[] data = redisData.toString().getBytes();
+		for (int i = 0; i < data.length; i++) {
+			ByteBuffer buf = ByteBuffer.allocate(1);
+			buf.put(data[i]).flip();
+
+			parser.read(buf);
+		}
+
+		RedisPacket[] packets = parser.getPackets();
+
+		assertTrue(packets.length == 1);
+		RedisPacket packet = packets[0];
+		String command = packet.getCommand();
+		assertEquals(command, RedisCommandSymbol.ERR);
+		if (packet instanceof RedisErrorPacket) {
+			RedisErrorPacket errorPacket = (RedisErrorPacket) packet;
+			assertEquals(errorPacket.getErrorMessage(), str);
+		} else {
+			assertFalse("数据包类型解析错误", false);
+		}
+
+	}
+
+	/**
+	 * 测试整数类型分包
+	 */
+	@Test
+	public void testSubIntegerStringPacket() throws Exception {
+		long num = 10000;
+		StringBuilder redisData = new StringBuilder();
+		redisData.append(':');
+		redisData.append(num);
+		redisData.append(CRLF);
+
+		RedisProtocolParser parser = new RedisProtocolParser();
+		byte[] data = redisData.toString().getBytes();
+		for (int i = 0; i < data.length; i++) {
+			ByteBuffer buf = ByteBuffer.allocate(1);
+			buf.put(data[i]).flip();
+
+			parser.read(buf);
+		}
+
+		RedisPacket[] packets = parser.getPackets();
+
+		assertTrue(packets.length == 1);
+
+		RedisPacket packet = packets[0];
+		String command = packet.getCommand();
+		assertEquals(command, RedisCommandSymbol.INTEGER);
+
+		if (packet instanceof RedisIntegerPacket) {
+			RedisIntegerPacket integerPacket = (RedisIntegerPacket) packet;
+			assertEquals(integerPacket.getNum(), num);
+		} else {
+			assertFalse("数据包类型解析错误", false);
+		}
+	}
 }

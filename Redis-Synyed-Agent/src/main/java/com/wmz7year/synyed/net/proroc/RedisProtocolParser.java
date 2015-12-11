@@ -445,6 +445,15 @@ public class RedisProtocolParser {
 						// 追加数据
 						appendToCurrentPacket(b2);
 					}
+				} else {
+					appendToCurrentPacket(b);
+				}
+			} else if (b == REDIS_PROTOCOL_N) {
+				if (currentPacketWriteFlag > 1) {
+					if (currentPacket[currentPacketWriteFlag - 1] == REDIS_PROTOCOL_R) {
+						// 一个完整的包
+						appendToCurrentPacket(b);
+					}
 				}
 			} else {
 				// 追加数据
@@ -459,6 +468,9 @@ public class RedisProtocolParser {
 	 * @return 当前数据包的数据
 	 */
 	private byte[] completCurrentPacket() {
+		if (currentPacketWriteFlag < 2) {
+			return null;
+		}
 		byte[] result = new byte[currentPacketWriteFlag - 2];
 		System.arraycopy(currentPacket, 0, result, 0, currentPacketWriteFlag - 2);
 		if (currentPacket[currentPacketWriteFlag - 2] == REDIS_PROTOCOL_R
