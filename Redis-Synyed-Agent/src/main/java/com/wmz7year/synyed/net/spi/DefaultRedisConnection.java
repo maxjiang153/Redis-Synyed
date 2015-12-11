@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.wmz7year.synyed.exception.RedisProtocolException;
+import com.wmz7year.synyed.net.RedisResponseListener;
 import com.wmz7year.synyed.net.RedisConnection;
 import com.wmz7year.synyed.net.proroc.RedisProtocolCodecFactory;
 import com.wmz7year.synyed.net.proroc.RedisProtocolParser;
@@ -84,6 +85,11 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 	 * redis包响应对象<br>
 	 */
 	private RedisPacket response;
+
+	/**
+	 * redis响应监听器
+	 */
+	private RedisResponseListener listener;
 
 	public DefaultRedisConnection() {
 
@@ -148,7 +154,11 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 			return;
 		}
 		RedisPacket redisPacket = (RedisPacket) message;
-		this.response = redisPacket;
+		if (listener != null) {
+			listener.receive(redisPacket);
+		} else {
+			this.response = redisPacket;
+		}
 	}
 
 	/*
@@ -237,6 +247,9 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 		if (!isConnected()) {
 			throw new RedisProtocolException("未连接到服务器");
 		}
+		if (listener != null) {
+			throw new RedisProtocolException("当前已经设置Redis响应数据包收集器 无法执行Redis命令");
+		}
 		lock.lock();
 		try {
 			// 清空上次响应
@@ -264,6 +277,39 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 			return response;
 		} finally {
 			lock.unlock();
+		}
+	}
+
+	/*
+	 * @see
+	 * com.wmz7year.synyed.net.RedisConnection#sendCommand(java.lang.String,
+	 * com.wmz7year.synyed.net.RedisCommandResponseListener, java.lang.String[])
+	 */
+	@Override
+	public void sendCommand(String command, RedisResponseListener listener, String... params)
+			throws RedisProtocolException {
+		if (!isConnected()) {
+			throw new RedisProtocolException("未连接到服务器");
+		}
+
+		this.listener = listener;
+
+		// 清空上次响应
+		response = null;
+		// 发送命令到redis服务器
+		this.ioSession.write(buildRequestCommand(command, params));
+	}
+
+	/*
+	 * @see com.wmz7year.synyed.net.RedisConnection#cancalResponseListener(com.
+	 * wmz7year.synyed.net.RedisCommandResponseListener)
+	 */
+	@Override
+	public void cancalResponseListener(RedisResponseListener listener) {
+		if (this.listener == listener) {
+			this.listener = null;
+		} else {
+			logger.warn("不匹配的监听器对象：" + listener);
 		}
 	}
 

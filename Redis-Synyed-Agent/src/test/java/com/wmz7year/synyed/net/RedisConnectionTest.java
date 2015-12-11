@@ -74,4 +74,26 @@ public class RedisConnectionTest {
 		assertEquals(response.getCommand(), "PONG");
 		connection.close();
 	}
+
+	/**
+	 * 测试发送命令使用redis连接监听器接受响应
+	 */
+	@Test
+	public void testSendCommandToRedisWithResponseListener() throws Exception {
+		RedisResponseListener listener = new RedisResponseListener() {
+
+			/*
+			 * @see com.wmz7year.synyed.net.RedisResponseListener#receive(com.
+			 * wmz7year.synyed.packet.redis.RedisPacket)
+			 */
+			@Override
+			public void receive(RedisPacket response) {
+				assertEquals(response.getCommand(), "PONG");
+			}
+		};
+		RedisConnection connection = new DefaultRedisConnection();
+		connection.connect(host, port, password, 5000);
+		connection.sendCommand("PING", listener);
+		connection.close();
+	}
 }

@@ -57,7 +57,8 @@ public interface RedisConnection extends Closeable {
 
 	/**
 	 * 发送Redis命令的方法<br>
-	 * 该方法会阻塞当前线程直到获取到响应内容或者超时
+	 * 该方法会阻塞当前线程直到获取到响应内容或者超时<br>
+	 * 超时时间为默认连接超时时间
 	 * 
 	 * @param command
 	 *            需要执行的redis命令
@@ -68,4 +69,31 @@ public interface RedisConnection extends Closeable {
 	 *             当发生错误时抛出该异常
 	 */
 	public RedisPacket sendCommand(String command, String... params) throws RedisProtocolException;
+
+	/**
+	 * 发送Redis命令的方法<br>
+	 * 调用该方法后会监听所有响应内容<br>
+	 * 并且会独占该Redis连接对象 无法执行其他Redis命令<br>
+	 * 所有Redis服务器发送的数据包内容均会发送到RedisCommandResponseListener中<br>
+	 * 直到调用cancalResponseListener后会恢复该连接的正常状态
+	 * 
+	 * @param command
+	 *            需要执行的redis命令
+	 * @param listener
+	 *            响应内容监听器
+	 * @param params
+	 *            请求的参数列表
+	 * @throws RedisProtocolException
+	 *             当发生错误时抛出该异常
+	 */
+	public void sendCommand(String command, RedisResponseListener listener, String... params)
+			throws RedisProtocolException;
+
+	/**
+	 * 移除响应监听器的方法
+	 * 
+	 * @param listener
+	 *            监听器对象
+	 */
+	public void cancalResponseListener(RedisResponseListener listener);
 }
