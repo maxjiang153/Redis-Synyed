@@ -85,7 +85,7 @@ public class RedisProtocolParser {
 	/**
 	 * 复合类型字符串的长度
 	 */
-	private long bulkLength = 0;
+	private long bulkLength = -2;
 	/**
 	 * 已经读取的复合类型字符串的长度
 	 */
@@ -220,7 +220,7 @@ public class RedisProtocolParser {
 				// 清空当前读取的数据包长度 bulk专用
 				this.readedBulkLength = 0;
 				// 清空当前数据包长度 bulk专用
-				this.bulkLength = 0;
+				this.bulkLength = -2;
 				// 还原bulk数据包长度正负标识位
 				this.bulkNeg = 0;
 				// 清空crlf标识位
@@ -266,25 +266,42 @@ public class RedisProtocolParser {
 	private RedisPacket processBulkStringsPacket() {
 		// 读取复合类型字符串数据长度
 		long result = readBulkStringLength();
-		if (result == 0) {
+		if (result == -2) {
 			return null;
 		}
 
-		// 判断是否是数据文件传输
+		// 读取对应字节长度的数据
+		while (true) {
+			// 判断数据是否读取完了
+			if (!hasData()) {
+				break;
+			}
+			byte b = buffer[readFlag++];
+			readedBulkLength++;
+			if (readedBulkLength == bulkLength) {
+				appendToCurrentPacket(b);
+				// 数据读取完了
+				break;
+			} else {
+				appendToCurrentPacket(b);
+			}
+		}
+		// 未读取完 直接返回 null
+		if (readedBulkLength != bulkLength) {
+			return null;
+		}
+
+		// 开始判断是否是数据传输的包
 		boolean isDatabaseTrancefer = false;
-		// 如果数据长度大于5 则判断是否是Redis数据文件的传输
-		if (result > 5) {
-			if (readFlag + 5 < limit) {
-				byte b1 = buffer[readFlag + 0];
-				byte b2 = buffer[readFlag + 1];
-				byte b3 = buffer[readFlag + 2];
-				byte b4 = buffer[readFlag + 3];
-				byte b5 = buffer[readFlag + 4];
-				if (b1 == 'R' && b2 == 'E' && b3 == 'D' && b4 == 'I' && b5 == 'S') {
-					isDatabaseTrancefer = true;
-				} else {
-					isDatabaseTrancefer = false;
-				}
+		// 读取完了 判断长度是否大于5
+		if (readedBulkLength > 5) {
+			byte b1 = currentPacket[0];
+			byte b2 = currentPacket[1];
+			byte b3 = currentPacket[2];
+			byte b4 = currentPacket[3];
+			byte b5 = currentPacket[4];
+			if (b1 == 'R' && b2 == 'E' && b3 == 'D' && b4 == 'I' && b5 == 'S') {
+				isDatabaseTrancefer = true;
 			} else {
 				isDatabaseTrancefer = false;
 			}
@@ -292,14 +309,20 @@ public class RedisProtocolParser {
 			isDatabaseTrancefer = false;
 		}
 
-		// 判断校验结果
+		// 将数据转换为数据传输请求包
 		if (isDatabaseTrancefer) {
-			// 解析数据文件传输包
-			return processBulkDatabaseTransferPacket();
+			byte[] packetData = new byte[currentPacketWriteFlag];
+			System.arraycopy(currentPacket, 0, packetData, 0, currentPacketWriteFlag);
+
+			// 这就是完整的包了
+			RedisDataBaseTransferPacket packet = new RedisDataBaseTransferPacket(DATABASETRANSFER);
+			packet.setData(packetData);
+			return packet;
 		} else {
-			System.out.println("普通 bulk字符串");
-			return null;
+			// TODO bulk
 		}
+
+		return null;
 
 	}
 
@@ -324,44 +347,6 @@ public class RedisProtocolParser {
 	}
 
 	/**
-	 * 处理Redis 文件传输格式数据包的方法
-	 * 
-	 * @return Redis数据文件传输格式数据包
-	 */
-	private RedisPacket processBulkDatabaseTransferPacket() {
-		// 读取对应字节长度的数据
-		while (true) {
-			// 判断数据是否读取完了
-			if (!hasData()) {
-				break;
-			}
-			byte b = buffer[readFlag++];
-			readedBulkLength++;
-			if (readedBulkLength == bulkLength) {
-				appendToCurrentPacket(b);
-				// 数据读取完了
-				break;
-			} else {
-				appendToCurrentPacket(b);
-			}
-		}
-		// 判断数据是否读取完 如果读取完则解析完整的包
-		if (readedBulkLength == bulkLength) {
-			byte[] packetData = new byte[currentPacketWriteFlag];
-			System.arraycopy(currentPacket, 0, packetData, 0, currentPacketWriteFlag);
-
-			// 这就是完整的包了
-			RedisDataBaseTransferPacket packet = new RedisDataBaseTransferPacket(DATABASETRANSFER);
-			packet.setData(packetData);
-			return packet;
-		} else {
-			// TODO
-			System.out.println("这是ping报");
-			return null;
-		}
-	}
-
-	/**
 	 * 读取redis复合类型字符串长度的方法
 	 * 
 	 * @return 复合类型字符串长度
@@ -372,7 +357,7 @@ public class RedisProtocolParser {
 			// 判断是否读取过数据的正负符号
 			if (bulkNeg == 0) {
 				if (!hasData()) {
-					return 0;
+					return -2;
 				}
 				byte isNegByte = buffer[readFlag++];
 				boolean isNeg = isNegByte == '-';
@@ -388,9 +373,10 @@ public class RedisProtocolParser {
 			// 获取完整数据包
 			byte[] packetData = completCurrentPacket();
 			if (packetData == null) {
-				return 0;
+				return -2;
 			}
 			// 解析数据长度
+			bulkLength = 0;
 			for (int i = 0; i < packetData.length; i++) {
 				bulkLength = bulkLength * 10 + packetData[i] - '0';
 			}

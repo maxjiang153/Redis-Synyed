@@ -15,6 +15,7 @@ import com.wmz7year.synyed.Booter;
 import com.wmz7year.synyed.constant.RedisCommandSymbol;
 import com.wmz7year.synyed.exception.RedisProtocolException;
 import com.wmz7year.synyed.net.proroc.RedisProtocolParser;
+import com.wmz7year.synyed.packet.redis.RedisDataBaseTransferPacket;
 import com.wmz7year.synyed.packet.redis.RedisErrorPacket;
 import com.wmz7year.synyed.packet.redis.RedisIntegerPacket;
 import com.wmz7year.synyed.packet.redis.RedisPacket;
@@ -285,6 +286,35 @@ public class RedisProtocolParserTest {
 	}
 
 	/**
+	 * 测试数据库传输包
+	 */
+	@Test
+	public void testDatabaseTransferPacket() throws Exception {
+		String str = "helloworld";
+		StringBuilder redisData = new StringBuilder();
+		redisData.append('$');
+		redisData.append(str.length() + 9);
+		redisData.append(CRLF);
+		redisData.append("REDIS0006");
+		redisData.append(str);
+
+		RedisProtocolParser parser = new RedisProtocolParser();
+		byte[] data = redisData.toString().getBytes();
+		ByteBuffer buf = ByteBuffer.allocate(data.length);
+		buf.put(data).flip();
+
+		parser.read(buf);
+
+		RedisPacket[] packets = parser.getPackets();
+		assertNotNull(packets);
+		assertTrue(packets.length == 1);
+		RedisPacket packet = packets[0];
+		assertEquals(packet.getCommand(), RedisCommandSymbol.DATABASETRANSFER);
+		assertTrue(packet instanceof RedisDataBaseTransferPacket);
+
+	}
+
+	/**
 	 * 测试分包
 	 */
 	@Test
@@ -382,5 +412,36 @@ public class RedisProtocolParserTest {
 		} else {
 			assertFalse("数据包类型解析错误", false);
 		}
+	}
+
+	/**
+	 * 测试分段数据库传输包
+	 */
+	@Test
+	public void testSubDatabaseTransferPacket() throws Exception {
+		String str = "he";
+		StringBuilder redisData = new StringBuilder();
+		redisData.append('$');
+		redisData.append(str.length() + 9);
+		redisData.append(CRLF);
+		redisData.append("REDIS0006");
+		redisData.append(str);
+
+		RedisProtocolParser parser = new RedisProtocolParser();
+		byte[] data = redisData.toString().getBytes();
+		for (int i = 0; i < data.length; i++) {
+			ByteBuffer buf = ByteBuffer.allocate(1);
+			buf.put(data[i]).flip();
+
+			parser.read(buf);
+		}
+
+		RedisPacket[] packets = parser.getPackets();
+		assertNotNull(packets);
+		assertTrue(packets.length == 1);
+		RedisPacket packet = packets[0];
+		assertEquals(packet.getCommand(), RedisCommandSymbol.DATABASETRANSFER);
+		assertTrue(packet instanceof RedisDataBaseTransferPacket);
+
 	}
 }
