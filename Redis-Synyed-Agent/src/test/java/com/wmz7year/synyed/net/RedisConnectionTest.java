@@ -10,6 +10,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.wmz7year.synyed.Booter;
 import com.wmz7year.synyed.net.spi.DefaultRedisConnection;
+import com.wmz7year.synyed.packet.redis.RedisPacket;
 
 /**
  * redis连接相关的测试
@@ -41,7 +42,7 @@ public class RedisConnectionTest {
 	@Test
 	public void testConnectRedis() throws Exception {
 		RedisConnection connection = new DefaultRedisConnection();
-		connection.connect(host, port, 1000);
+		connection.connect(host, port, 5000);
 		connection.close();
 		assertTrue(true);
 	}
@@ -52,9 +53,9 @@ public class RedisConnectionTest {
 	@Test
 	public void testSendCommandToRedis() throws Exception {
 		RedisConnection connection = new DefaultRedisConnection();
-		connection.connect(host, port, 1000);
-		Object sendCommand = connection.sendCommand("PING");
+		connection.connect(host, port, 5000);
+		RedisPacket response = connection.sendCommand("PING");
+		assertEquals(response.getCommand(), "PONG");
 		connection.close();
-		assertTrue(true);
 	}
 }

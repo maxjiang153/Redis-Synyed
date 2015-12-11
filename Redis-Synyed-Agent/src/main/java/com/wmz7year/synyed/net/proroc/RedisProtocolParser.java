@@ -3,12 +3,16 @@ package com.wmz7year.synyed.net.proroc;
 import static com.wmz7year.synyed.constant.RedisProtocolConstant.*;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.wmz7year.synyed.exception.RedisProtocolException;
+import com.wmz7year.synyed.packet.redis.RedisPacket;
+import com.wmz7year.synyed.packet.redis.RedisSimpleStringPacket;
 
 /**
  * Redis数据管道解析器<br>
@@ -60,6 +64,10 @@ public class RedisProtocolParser {
 	 * 读取数据包的自动扩容数量
 	 */
 	private int readInc = 128;
+	/**
+	 * 解析出的数据包列表
+	 */
+	private List<RedisPacket> packets = new ArrayList<RedisPacket>();
 
 	/**
 	 * 解析Redis数据包的方法<br>
@@ -146,7 +154,8 @@ public class RedisProtocolParser {
 							System.arraycopy(currentPacket, 0, packet, 0, tempFlag);
 
 							// 将byte数据解析成数据包对象
-							parsePacket(packet);
+							RedisPacket redisPacket = parsePacket(packet);
+							this.packets.add(redisPacket);
 
 							// 释放资源 生成新的包
 							tempFlag = 0;
@@ -177,7 +186,7 @@ public class RedisProtocolParser {
 	 * @throws RedisProtocolException
 	 *             当解析出现问题时抛出该异常
 	 */
-	private void parsePacket(byte[] buffer) throws RedisProtocolException {
+	private RedisPacket parsePacket(byte[] buffer) throws RedisProtocolException {
 		int bufferLength = buffer.length;
 		for (int i = 0; i < bufferLength; i++) {
 			// 读取第一个字节 该字节为redis协议类型字段
@@ -186,9 +195,8 @@ public class RedisProtocolParser {
 			case REDIS_PROTOCOL_SIMPLE_STRING:
 				byte[] data = new byte[bufferLength - 1];
 				System.arraycopy(buffer, 1, data, 0, bufferLength - 1);
-				System.out.println(new String(data));
-				// TODO read string
-				break;
+				RedisSimpleStringPacket packet = new RedisSimpleStringPacket(new String(data));
+				return packet;
 			case REDIS_PROTOCOL_ERRORS:
 				// TODO read error
 				break;
@@ -206,14 +214,25 @@ public class RedisProtocolParser {
 			}
 		}
 		// TODO
+		return null;
 	}
 
 	/**
+	 * 获取解析到的消息内容列表的方法
 	 * 
+	 * @return 消息内容列表
 	 */
-	public void getMessages() {
-		// TODO
+	public RedisPacket[] getPackets() {
+		// 如果没解析出消息啧返回空数组
+		if (packets.size() == 0) {
+			return null;
+		}
+		RedisPacket[] redisPackets = packets.toArray(new RedisPacket[packets.size()]);
+		// 执行内存回收操作
+		packets.clear();
 		gc();
+
+		return redisPackets;
 	}
 
 	/**

@@ -3,6 +3,7 @@ package com.wmz7year.synyed.net;
 import java.io.Closeable;
 
 import com.wmz7year.synyed.exception.RedisProtocolException;
+import com.wmz7year.synyed.packet.redis.RedisPacket;
 
 /**
  * 封装Redis连接对象的接口<br>
@@ -54,6 +55,15 @@ public interface RedisConnection extends Closeable {
 	 */
 	public boolean isConnected();
 
-	
-	public Object sendCommand(String command) throws RedisProtocolException;
+	/**
+	 * 发送Redis命令的方法<br>
+	 * 该方法会阻塞当前线程直到获取到响应内容或者超时
+	 * 
+	 * @param command
+	 *            需要执行的redis命令
+	 * @return redis响应包
+	 * @throws RedisProtocolException
+	 *             当发生错误时抛出该异常
+	 */
+	public RedisPacket sendCommand(String command) throws RedisProtocolException;
 }

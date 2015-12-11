@@ -22,6 +22,7 @@ import com.wmz7year.synyed.exception.RedisProtocolException;
 import com.wmz7year.synyed.net.RedisConnection;
 import com.wmz7year.synyed.net.proroc.RedisProtocolCodecFactory;
 import com.wmz7year.synyed.net.proroc.RedisProtocolParser;
+import com.wmz7year.synyed.packet.redis.RedisPacket;
 
 /**
  * 默认的Redis连接实现类<br>
@@ -73,6 +74,11 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 	 * 该锁的目的是保证同一时刻只有一个Redis命令在执行
 	 */
 	private Lock lock = new ReentrantLock();
+
+	/**
+	 * redis包响应对象<br>
+	 */
+	private RedisPacket response;
 
 	public DefaultRedisConnection() {
 
@@ -134,9 +140,12 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 	 */
 	@Override
 	public void messageReceived(IoSession session, Object message) throws Exception {
-		System.out.println("message:" + message);
-		// TODO Auto-generated method stub
-		super.messageReceived(session, message);
+		if (!(message instanceof RedisPacket)) {
+			logger.error("收到错误解析的数据包：" + message);
+			return;
+		}
+		RedisPacket redisPacket = (RedisPacket) message;
+		this.response = redisPacket;
 	}
 
 	/*
@@ -162,16 +171,25 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 		// 执行连接操作
 		connect();
 
-		// 等待500毫秒 mina进行连接处理
-		try {
-			TimeUnit.MILLISECONDS.sleep(500);
-		} catch (InterruptedException e) {
-			// ignore
+		// 等待mina进行连接处理
+		long start = System.currentTimeMillis();
+		while (ioSession == null) {
+			long current = System.currentTimeMillis();
+			if ((current - start) > this.connectionTimeOut) {
+				throw new RedisProtocolException("创建Redis连接超时");
+			} else {
+				// 等待100毫秒
+				try {
+					TimeUnit.MILLISECONDS.sleep(100);
+				} catch (InterruptedException e) {
+					// ignore
+				}
+			}
 		}
 
 		// 如果密码不为空则执行登录操作
 		if (password != null) {
-
+			// TODO redis auth登录命令
 		}
 		return true;
 	}
@@ -203,13 +221,38 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 	 * com.wmz7year.synyed.net.RedisConnection#sendCommand(java.lang.String)
 	 */
 	@Override
-	public Object sendCommand(String command) throws RedisProtocolException {
+	public RedisPacket sendCommand(String command) throws RedisProtocolException {
 		if (!isConnected()) {
 			throw new RedisProtocolException("未连接到服务器");
 		}
-		this.ioSession.write(command);
-		// TODO get response
-		return null;
+		lock.lock();
+		try {
+			// 清空上次响应
+			response = null;
+			// 发送命令到redis服务器
+			this.ioSession.write(command);
+			// 等待响应
+			long start = System.currentTimeMillis();
+			while (response == null) {
+				long current = System.currentTimeMillis();
+				if ((current - start) > this.connectionTimeOut) {
+					if (response != null) {
+						return response;
+					}
+					throw new RedisProtocolException("redis响应超时");
+				} else {
+					// 等待100毫秒
+					try {
+						TimeUnit.MILLISECONDS.sleep(100);
+					} catch (InterruptedException e) {
+						// ignore
+					}
+				}
+			}
+			return response;
+		} finally {
+			lock.unlock();
+		}
 	}
 
 	/*

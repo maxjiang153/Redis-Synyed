@@ -7,6 +7,8 @@ import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.CumulativeProtocolDecoder;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
 
+import com.wmz7year.synyed.packet.redis.RedisPacket;
+
 /**
  * redis协议解析器<br>
  * 
@@ -30,9 +32,15 @@ public class RedisProtocolDecoder extends CumulativeProtocolDecoder {
 		parser.read(in.buf());
 
 		// 获取解析器解析出的数据包
+		RedisPacket[] redisPackets = parser.getPackets();
+		if (redisPackets != null) {
+			for (RedisPacket redisPacket : redisPackets) {
+				out.write(redisPacket);
+			}
+		}
 
-		// TODO Auto-generated method stub
-		return false;
+		// 以是否读取完数据为判断符
+		return !in.hasRemaining();
 	}
 
 }
