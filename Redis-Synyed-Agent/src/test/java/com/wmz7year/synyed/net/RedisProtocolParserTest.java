@@ -38,6 +38,8 @@ public class RedisProtocolParserTest {
 
 	private static final String CRLF = "\r\n";
 
+	private static final RedisProtocolParser parser = new RedisProtocolParser();
+
 	/**
 	 * 测试普通的字符串解析
 	 */
@@ -49,7 +51,6 @@ public class RedisProtocolParserTest {
 		redisData.append(str);
 		redisData.append(CRLF);
 
-		RedisProtocolParser parser = new RedisProtocolParser();
 		byte[] data = redisData.toString().getBytes();
 		ByteBuffer buf = ByteBuffer.allocate(data.length);
 		buf.put(data).flip();
@@ -79,7 +80,6 @@ public class RedisProtocolParserTest {
 		redisData.append(str);
 		redisData.append(CRLF);
 
-		RedisProtocolParser parser = new RedisProtocolParser();
 		byte[] data = redisData.toString().getBytes();
 		logger.info("testLongSimpleStringPacket   str length:" + data.length);
 		ByteBuffer buf = ByteBuffer.allocate(data.length);
@@ -106,13 +106,13 @@ public class RedisProtocolParserTest {
 		redisData.append(str);
 		redisData.append(CRLF);
 
-		RedisProtocolParser parser = new RedisProtocolParser();
+		RedisProtocolParser localParser = new RedisProtocolParser();
 		byte[] data = redisData.toString().getBytes();
 		ByteBuffer buf = ByteBuffer.allocate(data.length);
 		buf.put(data).flip();
 
 		try {
-			parser.read(buf);
+			localParser.read(buf);
 		} catch (Exception e) {
 			assertTrue(e instanceof RedisProtocolException);
 		}
@@ -133,7 +133,6 @@ public class RedisProtocolParserTest {
 		redisData.append(str);
 		redisData.append(CRLF);
 
-		RedisProtocolParser parser = new RedisProtocolParser();
 		byte[] data = redisData.toString().getBytes();
 		ByteBuffer buf = ByteBuffer.allocate(data.length);
 		buf.put(data).flip();
@@ -169,7 +168,6 @@ public class RedisProtocolParserTest {
 		redisData.append(str);
 		redisData.append(CRLF);
 
-		RedisProtocolParser parser = new RedisProtocolParser();
 		byte[] data = redisData.toString().getBytes();
 		ByteBuffer buf = ByteBuffer.allocate(data.length);
 		buf.put(data).flip();
@@ -203,7 +201,6 @@ public class RedisProtocolParserTest {
 		redisData.append(num);
 		redisData.append(CRLF);
 
-		RedisProtocolParser parser = new RedisProtocolParser();
 		byte[] data = redisData.toString().getBytes();
 		ByteBuffer buf = ByteBuffer.allocate(data.length);
 		buf.put(data).flip();
@@ -237,7 +234,6 @@ public class RedisProtocolParserTest {
 		redisData.append(num);
 		redisData.append(CRLF);
 
-		RedisProtocolParser parser = new RedisProtocolParser();
 		byte[] data = redisData.toString().getBytes();
 		ByteBuffer buf = ByteBuffer.allocate(data.length);
 		buf.put(data).flip();
@@ -271,12 +267,12 @@ public class RedisProtocolParserTest {
 		redisData.append(num);
 		redisData.append(CRLF);
 
-		RedisProtocolParser parser = new RedisProtocolParser();
+		RedisProtocolParser localParser = new RedisProtocolParser();
 		byte[] data = redisData.toString().getBytes();
 		ByteBuffer buf = ByteBuffer.allocate(data.length);
 		buf.put(data).flip();
 		try {
-			parser.read(buf);
+			localParser.read(buf);
 		} catch (Exception e) {
 			assertTrue(e instanceof RedisProtocolException);
 		}
@@ -300,7 +296,6 @@ public class RedisProtocolParserTest {
 		redisData.append("REDIS0006");
 		redisData.append(str);
 
-		RedisProtocolParser parser = new RedisProtocolParser();
 		byte[] data = redisData.toString().getBytes();
 		ByteBuffer buf = ByteBuffer.allocate(data.length);
 		buf.put(data).flip();
@@ -329,7 +324,6 @@ public class RedisProtocolParserTest {
 		redisData.append(str);
 		redisData.append(CRLF);
 
-		RedisProtocolParser parser = new RedisProtocolParser();
 		byte[] data = redisData.toString().getBytes();
 		ByteBuffer buf = ByteBuffer.allocate(data.length);
 		buf.put(data).flip();
@@ -362,7 +356,6 @@ public class RedisProtocolParserTest {
 		redisData.append(str);
 		redisData.append(CRLF);
 
-		RedisProtocolParser parser = new RedisProtocolParser();
 		byte[] data = redisData.toString().getBytes();
 		ByteBuffer buf = ByteBuffer.allocate(data.length);
 		buf.put(data).flip();
@@ -392,7 +385,6 @@ public class RedisProtocolParserTest {
 		redisData.append(str);
 		redisData.append(CRLF);
 
-		RedisProtocolParser parser = new RedisProtocolParser();
 		byte[] data = redisData.toString().getBytes();
 		ByteBuffer buf = ByteBuffer.allocate(data.length);
 		buf.put(data).flip();
@@ -419,7 +411,6 @@ public class RedisProtocolParserTest {
 		redisData.append(0);
 		redisData.append(CRLF);
 
-		RedisProtocolParser parser = new RedisProtocolParser();
 		byte[] data = redisData.toString().getBytes();
 		ByteBuffer buf = ByteBuffer.allocate(data.length);
 		buf.put(data).flip();
@@ -444,7 +435,6 @@ public class RedisProtocolParserTest {
 		redisData.append(1);
 		redisData.append(CRLF);
 
-		RedisProtocolParser parser = new RedisProtocolParser();
 		byte[] data = redisData.toString().getBytes();
 		ByteBuffer buf = ByteBuffer.allocate(data.length);
 		buf.put(data).flip();
@@ -479,7 +469,6 @@ public class RedisProtocolParserTest {
 		redisData.append("helloworld");
 		redisData.append(CRLF);
 
-		RedisProtocolParser parser = new RedisProtocolParser();
 		byte[] data = redisData.toString().getBytes();
 		ByteBuffer buf = ByteBuffer.allocate(data.length);
 		buf.put(data).flip();
@@ -511,7 +500,6 @@ public class RedisProtocolParserTest {
 		redisData.append(str);
 		redisData.append(CRLF);
 
-		RedisProtocolParser parser = new RedisProtocolParser();
 		byte[] data = redisData.toString().getBytes();
 		for (int i = 0; i < data.length; i++) {
 			ByteBuffer buf = ByteBuffer.allocate(1);
@@ -540,7 +528,6 @@ public class RedisProtocolParserTest {
 		redisData.append(str);
 		redisData.append(CRLF);
 
-		RedisProtocolParser parser = new RedisProtocolParser();
 		byte[] data = redisData.toString().getBytes();
 		for (int i = 0; i < data.length; i++) {
 			ByteBuffer buf = ByteBuffer.allocate(1);
@@ -575,7 +562,6 @@ public class RedisProtocolParserTest {
 		redisData.append(num);
 		redisData.append(CRLF);
 
-		RedisProtocolParser parser = new RedisProtocolParser();
 		byte[] data = redisData.toString().getBytes();
 		for (int i = 0; i < data.length; i++) {
 			ByteBuffer buf = ByteBuffer.allocate(1);
@@ -613,7 +599,6 @@ public class RedisProtocolParserTest {
 		redisData.append("REDIS0006");
 		redisData.append(str);
 
-		RedisProtocolParser parser = new RedisProtocolParser();
 		byte[] data = redisData.toString().getBytes();
 		for (int i = 0; i < data.length; i++) {
 			ByteBuffer buf = ByteBuffer.allocate(1);
@@ -644,7 +629,6 @@ public class RedisProtocolParserTest {
 		redisData.append(str);
 		redisData.append(CRLF);
 
-		RedisProtocolParser parser = new RedisProtocolParser();
 		byte[] data = redisData.toString().getBytes();
 		for (int i = 0; i < data.length; i++) {
 			ByteBuffer buf = ByteBuffer.allocate(1);
@@ -670,7 +654,7 @@ public class RedisProtocolParserTest {
 	public void testSubOneIntegerDataOneStringDataArrayPacket() throws Exception {
 		StringBuilder redisData = new StringBuilder();
 		redisData.append('*');
-		redisData.append(2);
+		redisData.append(2); 
 		redisData.append(CRLF);
 		redisData.append(':');
 		redisData.append(1);
@@ -679,7 +663,6 @@ public class RedisProtocolParserTest {
 		redisData.append("helloworld");
 		redisData.append(CRLF);
 
-		RedisProtocolParser parser = new RedisProtocolParser();
 		byte[] data = redisData.toString().getBytes();
 		for (int i = 0; i < data.length; i++) {
 			ByteBuffer buf = ByteBuffer.allocate(1);

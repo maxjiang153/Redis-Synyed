@@ -193,6 +193,13 @@ public class RedisProtocolParser {
 				RedisPacket packet = decodePacket();
 				if (packet != null) {
 					arrayPacket.addPacket(packet);
+
+					// 如果数组类型数据包读取完毕 则清空对应的标识位
+					if (arrayPacket != null && arrayPacket.getPackets().size() == arrayLength) {
+						arrayLength = -2;
+						arrayPacket = null;
+						arrayCrLfReaded = false;
+					}
 				}
 			} else {
 				RedisPacket packet = decodePacket();
@@ -254,6 +261,13 @@ public class RedisProtocolParser {
 				this.bulkNeg = 0;
 				// 清空crlf标识位
 				this.bulkCrLfReaded = false;
+
+				// 如果数组类型数据包读取完毕 则清空对应的标识位
+				if (arrayPacket != null && arrayPacket.getPackets().size() == arrayLength) {
+					arrayLength = -2;
+					arrayPacket = null;
+					arrayCrLfReaded = false;
+				}
 			}
 			return responsePacket;
 		} catch (Exception e) {
@@ -382,7 +396,8 @@ public class RedisProtocolParser {
 		}
 		// 长度为0的空数组 直接返回
 		if (arrayLength == 0) {
-			return new RedisArraysPacket(ARRAY);
+			arrayPacket = new RedisArraysPacket(ARRAY);
+			return arrayPacket;
 		}
 
 		// 处理分包情况
@@ -397,10 +412,12 @@ public class RedisProtocolParser {
 		}
 
 		// 根据数组长度解析对应的数据包
-		for (int i = 0; i < arrayLength; i++) {
+		while (arrayPacket.getPackets().size() != arrayLength) {
 			RedisPacket element = decodePacket();
 			if (element != null) {
 				arrayPacket.addPacket(element);
+			} else {
+				break;
 			}
 		}
 
@@ -480,8 +497,6 @@ public class RedisProtocolParser {
 			if (!hasData()) {
 				return -2;
 			}
-			byte isNegByte = buffer[readFlag++];
-			appendToCurrentPacket(isNegByte);
 			// 读取数据
 			readData();
 			// 获取完整数据包
