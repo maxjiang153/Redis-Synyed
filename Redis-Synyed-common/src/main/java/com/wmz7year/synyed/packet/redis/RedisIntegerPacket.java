@@ -27,4 +27,12 @@ public class RedisIntegerPacket extends RedisPacket {
 		return this.num;
 	}
 
+	/*
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "RedisIntegerPacket [num=" + num + "]";
+	}
+
 }

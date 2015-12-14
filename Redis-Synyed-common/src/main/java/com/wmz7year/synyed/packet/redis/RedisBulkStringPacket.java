@@ -27,4 +27,12 @@ public class RedisBulkStringPacket extends RedisPacket {
 		this.data = data;
 	}
 
+	/*
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "RedisBulkStringPacket [data=" + data + "]";
+	}
+
 }

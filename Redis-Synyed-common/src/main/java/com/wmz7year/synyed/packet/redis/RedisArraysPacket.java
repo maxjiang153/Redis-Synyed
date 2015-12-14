@@ -45,4 +45,13 @@ public class RedisArraysPacket extends RedisPacket {
 	public void addPacket(RedisPacket packet) {
 		this.packets.add(packet);
 	}
+
+	/*
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "RedisArraysPacket [arrayLength=" + arrayLength + ", packets=" + packets + "]";
+	}
+
 }
