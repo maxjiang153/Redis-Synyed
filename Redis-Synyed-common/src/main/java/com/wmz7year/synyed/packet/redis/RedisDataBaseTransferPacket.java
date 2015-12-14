@@ -33,4 +33,12 @@ public class RedisDataBaseTransferPacket extends RedisPacket {
 		this.packetData = packetData;
 	}
 
+	/*
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "RedisDataBaseTransferPacket [packetDataLength=" + packetData.length + "]";
+	}
+
 }
