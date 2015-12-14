@@ -134,7 +134,6 @@ public class RedisProtocolParser {
 		byte[] dataBuffer = new byte[dataLength];
 		// 读取数据
 		byteBuffer.get(dataBuffer);
-		System.out.println(java.util.Arrays.toString(dataBuffer));
 		// 获取当前缓冲区剩余可用空间
 		int currentCapacity = 0;
 		if (limit > readFlag) {
