@@ -3,6 +3,8 @@ package com.wmz7year.synyed.constant;
 /**
  * 封装Redis命令符号常量类
  * 
+ * FIXME：常量按字母顺序排序
+ * 
  * @Title: RedisCommandSymbol.java
  * @Package com.wmz7year.synyed.constant
  * @author jiangwei (ydswcy513@gmail.com)
@@ -38,4 +40,8 @@ public class RedisCommandSymbol {
 	 * 复合类型的字符串
 	 */
 	public static final String BULKSTRING = "BULKSTRING";
+	/**
+	 * 数组类型数据包
+	 */
+	public static final String ARRAY = "ARRAY";
 }
