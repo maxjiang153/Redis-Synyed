@@ -15,6 +15,7 @@ import com.wmz7year.synyed.Booter;
 import com.wmz7year.synyed.constant.RedisCommandSymbol;
 import com.wmz7year.synyed.exception.RedisProtocolException;
 import com.wmz7year.synyed.net.proroc.RedisProtocolParser;
+import com.wmz7year.synyed.packet.redis.RedisArraysPacket;
 import com.wmz7year.synyed.packet.redis.RedisBulkStringPacket;
 import com.wmz7year.synyed.packet.redis.RedisDataBaseTransferPacket;
 import com.wmz7year.synyed.packet.redis.RedisErrorPacket;
@@ -409,6 +410,97 @@ public class RedisProtocolParserTest {
 	}
 
 	/**
+	 * 测试空的数组
+	 */
+	@Test
+	public void testEmptyArrayPacket() throws Exception {
+		StringBuilder redisData = new StringBuilder();
+		redisData.append('*');
+		redisData.append(0);
+		redisData.append(CRLF);
+
+		RedisProtocolParser parser = new RedisProtocolParser();
+		byte[] data = redisData.toString().getBytes();
+		ByteBuffer buf = ByteBuffer.allocate(data.length);
+		buf.put(data).flip();
+
+		parser.read(buf);
+
+		RedisPacket[] packets = parser.getPackets();
+		assertNotNull(packets);
+		assertTrue(packets.length == 1);
+	}
+
+	/**
+	 * 测试1个整数元素的数组
+	 */
+	@Test
+	public void testOneIntegerDataArrayPacket() throws Exception {
+		StringBuilder redisData = new StringBuilder();
+		redisData.append('*');
+		redisData.append(1);
+		redisData.append(CRLF);
+		redisData.append(':');
+		redisData.append(1);
+		redisData.append(CRLF);
+
+		RedisProtocolParser parser = new RedisProtocolParser();
+		byte[] data = redisData.toString().getBytes();
+		ByteBuffer buf = ByteBuffer.allocate(data.length);
+		buf.put(data).flip();
+
+		parser.read(buf);
+
+		RedisPacket[] packets = parser.getPackets();
+		assertNotNull(packets);
+		assertTrue(packets.length == 1);
+		RedisPacket packet = packets[0];
+		assertEquals(packet.getCommand(), RedisCommandSymbol.ARRAY);
+
+		RedisArraysPacket arrayPacket = (RedisArraysPacket) packet;
+		assertTrue(arrayPacket.getPackets().size() == 1);
+		RedisPacket elementPacket = arrayPacket.getPackets().get(0);
+		assertEquals(elementPacket.getCommand(), RedisCommandSymbol.INTEGER);
+	}
+
+	/**
+	 * 测试1个整数元素的数组
+	 */
+	@Test
+	public void testOneIntegerDataOneStringDataArrayPacket() throws Exception {
+		StringBuilder redisData = new StringBuilder();
+		redisData.append('*');
+		redisData.append(2);
+		redisData.append(CRLF);
+		redisData.append(':');
+		redisData.append(1);
+		redisData.append(CRLF);
+		redisData.append('+');
+		redisData.append("helloworld");
+		redisData.append(CRLF);
+
+		RedisProtocolParser parser = new RedisProtocolParser();
+		byte[] data = redisData.toString().getBytes();
+		ByteBuffer buf = ByteBuffer.allocate(data.length);
+		buf.put(data).flip();
+
+		parser.read(buf);
+
+		RedisPacket[] packets = parser.getPackets();
+		assertNotNull(packets);
+		assertTrue(packets.length == 1);
+		RedisPacket packet = packets[0];
+		assertEquals(packet.getCommand(), RedisCommandSymbol.ARRAY);
+
+		RedisArraysPacket arrayPacket = (RedisArraysPacket) packet;
+		assertTrue(arrayPacket.getPackets().size() == 2);
+		RedisPacket elementPacket = arrayPacket.getPackets().get(0);
+		assertEquals(elementPacket.getCommand(), RedisCommandSymbol.INTEGER);
+		RedisPacket elementPacket1 = arrayPacket.getPackets().get(1);
+		assertEquals(elementPacket1.getCommand(), "helloworld");
+	}
+
+	/**
 	 * 测试分包
 	 */
 	@Test
@@ -569,5 +661,44 @@ public class RedisProtocolParserTest {
 		assertTrue(packet instanceof RedisBulkStringPacket);
 		RedisBulkStringPacket bulkPacket = (RedisBulkStringPacket) packet;
 		assertEquals(str, bulkPacket.getData());
+	}
+
+	/**
+	 * 测试1个整数元素的数组
+	 */
+	@Test
+	public void testSubOneIntegerDataOneStringDataArrayPacket() throws Exception {
+		StringBuilder redisData = new StringBuilder();
+		redisData.append('*');
+		redisData.append(2);
+		redisData.append(CRLF);
+		redisData.append(':');
+		redisData.append(1);
+		redisData.append(CRLF);
+		redisData.append('+');
+		redisData.append("helloworld");
+		redisData.append(CRLF);
+
+		RedisProtocolParser parser = new RedisProtocolParser();
+		byte[] data = redisData.toString().getBytes();
+		for (int i = 0; i < data.length; i++) {
+			ByteBuffer buf = ByteBuffer.allocate(1);
+			buf.put(data[i]).flip();
+
+			parser.read(buf);
+		}
+
+		RedisPacket[] packets = parser.getPackets();
+		assertNotNull(packets);
+		assertTrue(packets.length == 1);
+		RedisPacket packet = packets[0];
+		assertEquals(packet.getCommand(), RedisCommandSymbol.ARRAY);
+
+		RedisArraysPacket arrayPacket = (RedisArraysPacket) packet;
+		assertTrue(arrayPacket.getPackets().size() == 2);
+		RedisPacket elementPacket = arrayPacket.getPackets().get(0);
+		assertEquals(elementPacket.getCommand(), RedisCommandSymbol.INTEGER);
+		RedisPacket elementPacket1 = arrayPacket.getPackets().get(1);
+		assertEquals(elementPacket1.getCommand(), "helloworld");
 	}
 }

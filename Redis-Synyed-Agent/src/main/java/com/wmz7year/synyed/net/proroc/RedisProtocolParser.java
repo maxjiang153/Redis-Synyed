@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.wmz7year.synyed.exception.RedisProtocolException;
+import com.wmz7year.synyed.packet.redis.RedisArraysPacket;
 import com.wmz7year.synyed.packet.redis.RedisBulkStringPacket;
 import com.wmz7year.synyed.packet.redis.RedisDataBaseTransferPacket;
 import com.wmz7year.synyed.packet.redis.RedisErrorPacket;
@@ -25,6 +26,8 @@ import com.wmz7year.synyed.packet.redis.RedisSimpleStringPacket;
  * 如断包、粘包等<br>
  * 每个redis命令都以\r\n结尾 也就是0x0D 0x0A<br>
  * 该解析器为全局唯一的对象
+ * 
+ * FIXME:重构该类
  * 
  * 
  * @Title: RedisProtocolParser.java
@@ -101,6 +104,22 @@ public class RedisProtocolParser {
 	private byte currentPacketType;
 
 	/**
+	 * 数组类型长度是否读取过的标识位<br>
+	 * 只有数组类型数据包读取的时候会使用
+	 */
+	private boolean arrayCrLfReaded = false;
+
+	/**
+	 * 数组数据长度
+	 */
+	private long arrayLength = -2;
+
+	/**
+	 * 当前处理中的数组包
+	 */
+	private RedisArraysPacket arrayPacket;
+
+	/**
 	 * 解析Redis数据包的方法<br>
 	 * 
 	 * @param byteBuffer
@@ -170,10 +189,18 @@ public class RedisProtocolParser {
 			if (!hasData()) {
 				break;
 			}
-			RedisPacket packet = decodePacket();
-			if (packet != null) {
-				this.packets.add(packet);
+			if (this.arrayPacket != null) {
+				RedisPacket packet = decodePacket();
+				if (packet != null) {
+					arrayPacket.addPacket(packet);
+				}
+			} else {
+				RedisPacket packet = decodePacket();
+				if (packet != null) {
+					this.packets.add(packet);
+				}
 			}
+
 		}
 	}
 
@@ -191,6 +218,7 @@ public class RedisProtocolParser {
 			if (!hasData()) {
 				return null;
 			}
+
 			// 判断是否有解析中的包 如果没有则初始化一个新的当前包缓冲区
 			if (currentPacket == null) {
 				currentPacket = new byte[readInc];
@@ -205,7 +233,7 @@ public class RedisProtocolParser {
 			} else if (currentPacketType == REDIS_PROTOCOL_BULK_STRINGS) {
 				responsePacket = processBulkStringsPacket();
 			} else if (currentPacketType == REDIS_PROTOCOL_ARRAY) {
-				// TODO 数组类型
+				responsePacket = processArrayPacket();
 			} else if (currentPacketType == REDIS_PROTOCOL_INTEGERS) {
 				responsePacket = processIntegerPacket();
 			} else if (currentPacketType == REDIS_PROTOCOL_ERRORS) {
@@ -290,7 +318,7 @@ public class RedisProtocolParser {
 				}
 			}
 		}
-		
+
 		// 未读取完 直接返回 null
 		if (readedBulkLength != bulkLength) {
 			return null;
@@ -336,6 +364,47 @@ public class RedisProtocolParser {
 			return packet;
 		}
 
+	}
+
+	/**
+	 * 读取redis数组格式数据的方法<br>
+	 * 首先先读取数组内容的长度 再根据长度读取对应的数据
+	 * 
+	 * @return redis数组类型数据包
+	 * @throws RedisProtocolException
+	 *             当解析过程中发生错误则抛出该异常
+	 */
+	private RedisPacket processArrayPacket() throws RedisProtocolException {
+		// 读取数组内容长度
+		long arrayLength = readArrayLength();
+		if (arrayLength == -2) {
+			return null;
+		}
+		// 长度为0的空数组 直接返回
+		if (arrayLength == 0) {
+			return new RedisArraysPacket(ARRAY);
+		}
+
+		// 处理分包情况
+		if (arrayPacket == null) {
+			// 清空当前处理的数据包
+			cleanCurrentPacket();
+			// 清空当前数据包类型
+			this.currentPacketType = 0;
+			// 响应数据包
+			this.arrayPacket = new RedisArraysPacket(ARRAY);
+			arrayPacket.setArrayLength(arrayLength);
+		}
+
+		// 根据数组长度解析对应的数据包
+		for (int i = 0; i < arrayLength; i++) {
+			RedisPacket element = decodePacket();
+			if (element != null) {
+				arrayPacket.addPacket(element);
+			}
+		}
+
+		return arrayPacket;
 	}
 
 	/**
@@ -398,6 +467,39 @@ public class RedisProtocolParser {
 			currentPacket = new byte[readInc];
 		}
 		return bulkLength;
+	}
+
+	/**
+	 * 读取redis数组类型长度的方法
+	 * 
+	 * @return 数组类型长
+	 */
+	private long readArrayLength() {
+		// 判断是否读取过长度信息
+		if (!arrayCrLfReaded) {
+			if (!hasData()) {
+				return -2;
+			}
+			byte isNegByte = buffer[readFlag++];
+			appendToCurrentPacket(isNegByte);
+			// 读取数据
+			readData();
+			// 获取完整数据包
+			byte[] packetData = completCurrentPacket();
+			if (packetData == null) {
+				return -2;
+			}
+			// 解析数据长度
+			arrayLength = 0;
+			for (int i = 0; i < packetData.length; i++) {
+				arrayLength = arrayLength * 10 + packetData[i] - '0';
+			}
+			arrayCrLfReaded = true;
+			// 清空长度数据包读取信息
+			cleanCurrentPacket();
+			currentPacket = new byte[readInc];
+		}
+		return arrayLength;
 	}
 
 	/**
