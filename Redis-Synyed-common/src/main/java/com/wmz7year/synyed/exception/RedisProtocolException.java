@@ -25,11 +25,12 @@ public class RedisProtocolException extends Exception {
 	}
 
 	public RedisProtocolException(Throwable nestedThrowable) {
+		super(nestedThrowable);
 		this.nestedThrowable = nestedThrowable;
 	}
 
 	public RedisProtocolException(String msg, Throwable nestedThrowable) {
-		super(msg);
+		super(msg, nestedThrowable);
 		this.nestedThrowable = nestedThrowable;
 	}
 
