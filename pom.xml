@@ -22,6 +22,7 @@
 		<!-- dependencies version -->
 		<spring.boot.version>1.2.7.RELEASE</spring.boot.version>
 		<mina.version>2.0.9</mina.version>
+		<commons.io.version>2.4</commons.io.version>
 		<junit.version>4.12</junit.version>
 	</properties>
 
@@ -57,6 +58,11 @@
 
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>commons-io</groupId>
+				<artifactId>commons-io</artifactId>
+				<version>${commons.io.version}</version>
+			</dependency>
 			<dependency>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-starter-parent</artifactId>
