@@ -355,7 +355,7 @@ public class RDBParserImpl0006 implements RDBParser {
 		if (!readBytes(buf, 0, 1)) {
 			throw new RedisRDBException("解析错误");
 		}
-		len = buf[0];
+		len = buf[0] & 0xFF;
 		switch (len) {
 		case 255:
 			return R_NegInf;
@@ -452,14 +452,14 @@ public class RDBParserImpl0006 implements RDBParser {
 			if (!readBytes(enc, 0, 2)) {
 				throw new RedisRDBException("解析错误");
 			}
-			v = enc[0] | (enc[1] << 8);
+			v = (enc[0] & 0xFF) | (enc[1] << 8);
 			val = v;
 		} else if (enctype == REDIS_RDB_ENC_INT32) {
 			int v = 0;
 			if (!readBytes(enc, 0, 4)) {
 				throw new RedisRDBException("解析错误");
 			}
-			v = enc[0] | (enc[1] << 8) | (enc[2] << 16) | (enc[3] << 24);
+			v = (enc[0] & 0xFF) | (enc[1] << 8) | (enc[2] << 16) | (enc[3] << 24);
 			val = v;
 		} else {
 			val = 0; /* anti-warning */
