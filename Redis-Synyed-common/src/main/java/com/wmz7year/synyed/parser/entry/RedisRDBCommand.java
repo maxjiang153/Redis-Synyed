@@ -1,5 +1,6 @@
 package com.wmz7year.synyed.parser.entry;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -33,7 +34,7 @@ public class RedisRDBCommand {
 
 	public List<String> getCommands() {
 		// TODO 分析key value 转换成redis命令
-		return null;
+		return Collections.emptyList();
 	}
 
 	/*

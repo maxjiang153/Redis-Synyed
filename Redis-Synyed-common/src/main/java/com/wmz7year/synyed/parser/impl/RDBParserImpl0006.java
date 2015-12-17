@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.Redis.Synyed.util.CRC64;
 import org.Redis.Synyed.util.LZFDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +68,8 @@ public class RDBParserImpl0006 implements RDBParser {
 			throw new NullPointerException();
 		}
 		logger.info("rdb文件长度:" + rdbContent.length);
+		// 获取crc64校验值
+		long crc64 = CRC64.checksum(rdbContent, rdbContent.length - 8);
 		// byte
 		bis = new ByteArrayInputStream(rdbContent);
 		// 校验版本是否正确
@@ -74,6 +77,21 @@ public class RDBParserImpl0006 implements RDBParser {
 
 		// 开始解析rdb文件内容
 		parseRDBContent();
+
+		// 读取crc校验值
+		// 校验8字节的CRC
+		byte[] crcBuf = new byte[8];
+		if (!readBytes(crcBuf, 0, 8)) {
+			throw new RedisRDBException("CRC校验值读取异常");
+		}
+		// 转换成long类型
+		long rdbCrc = byte2Long(crcBuf);
+		// TODO
+		if (rdbCrc == 0) {
+			logger.warn("RDB存储文件禁用CRC64完整性校验");
+		} else if (crc64 != rdbCrc) {
+			throw new RedisRDBException("CRC值校验失败 应为：" + rdbCrc + " 实际：" + crc64);
+		}
 	}
 
 	/**
@@ -174,12 +192,6 @@ public class RDBParserImpl0006 implements RDBParser {
 			// 添加到rdb中
 			redisDB.addCommand(rdbCommand);
 		}
-		// 校验8字节的CRC
-		byte[] crcBuf = new byte[8];
-		if (!readBytes(crcBuf, 0, 8)) {
-			throw new RedisRDBException("CRC校验值读取异常");
-		}
-		// TODO crc check
 	}
 
 	/**
