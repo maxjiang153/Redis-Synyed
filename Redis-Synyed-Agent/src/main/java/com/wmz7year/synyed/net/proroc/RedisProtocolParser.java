@@ -194,7 +194,7 @@ public class RedisProtocolParser {
 					arrayPacket.addPacket(packet);
 
 					// 如果数组类型数据包读取完毕 则清空对应的标识位
-					if (arrayPacket != null && arrayPacket.getPackets().size() == arrayLength) {
+					if (arrayPacket.getPackets().size() == arrayLength) {
 						arrayLength = -2;
 						arrayPacket = null;
 						arrayCrLfReaded = false;
