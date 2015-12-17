@@ -1,5 +1,7 @@
 package com.wmz7year.synyed.parser;
 
+import static org.junit.Assert.*;
+
 import org.apache.commons.io.HexDump;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,7 +22,8 @@ import com.wmz7year.synyed.Booter;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = Booter.class)
 public class RDBParserImpl0006Test {
-	private static final byte[] rdbData = new byte[] { 82, 69, 68, 73, 83, 48, 48, 48, 54, -1, -36, -77, 67, -16, 90, -36, -14, 86 };
+	private static final byte[] rdbData = new byte[] { 82, 69, 68, 73, 83, 48, 48, 48, 54, -1, -36, -77, 67, -16, 90,
+			-36, -14, 86 };
 
 	/**
 	 * 显示RDB字节内容以及格式化
@@ -39,6 +42,35 @@ public class RDBParserImpl0006Test {
 		System.arraycopy(rdbData, 0, rdbHeader, 0, 9);
 		RDBParser rdbParser = RDBParserFactory.createRDBParser(rdbHeader);
 		rdbParser.parse(rdbData);
+	}
+
+	/**
+	 * 测试正常校验crc64值
+	 */
+	@Test
+	public void testCheckRDBCRCSum() throws Exception {
+		byte[] rdbData = new byte[] { 82, 69, 68, 73, 83, 48, 48, 48, 54, -1, -36, -77, 67, -16, 90, -36, -14, 86 };
+		byte[] rdbHeader = new byte[9];
+		System.arraycopy(rdbData, 0, rdbHeader, 0, 9);
+		RDBParser rdbParser = RDBParserFactory.createRDBParser(rdbHeader);
+		rdbParser.parse(rdbData);
+	}
+
+	/**
+	 * 测试正常校验crc64值
+	 */
+	@Test
+	public void testCheckRDBCRCSumOnerror() throws Exception {
+		byte[] rdbData = new byte[] { 82, 69, 68, 73, 83, 48, 48, 48, 54, -1, -36, -77, 67, -16, 90, -36, -14, 87 };
+		byte[] rdbHeader = new byte[9];
+		System.arraycopy(rdbData, 0, rdbHeader, 0, 9);
+		try {
+			RDBParser rdbParser = RDBParserFactory.createRDBParser(rdbHeader);
+			rdbParser.parse(rdbData);
+			assertTrue(false);
+		} catch (Exception e) {
+			assertTrue(true);
+		}
 	}
 
 }
