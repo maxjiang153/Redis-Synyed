@@ -86,7 +86,6 @@ public class RDBParserImpl0006 implements RDBParser {
 		}
 		// 转换成long类型
 		long rdbCrc = byte2Long(crcBuf);
-		// TODO
 		if (rdbCrc == 0) {
 			logger.warn("RDB存储文件禁用CRC64完整性校验");
 		} else if (crc64 != rdbCrc) {
