@@ -15,6 +15,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.wmz7year.synyed.Booter;
 import com.wmz7year.synyed.parser.entry.RedisDB;
+import com.wmz7year.synyed.parser.entry.RedisZipListObject;
 
 /**
  * redis rdb0006版本的解析器测试
@@ -93,19 +94,14 @@ public class RDBParserImpl0006Test {
 	 */
 	@Test
 	public void testZipListObject() throws Exception {
-		byte[] rdbData = new byte[] { 82, 69, 68, 73, 83, 48, 48, 48, 54, -2, 0, 10, 4, 116, 101, 115, 116, -61, 64,
-				107, 64, 119, 4, 119, 0, 0, 0, 116, 32, 3, 7, 9, 0, 0, 58, 97, 97, 115, 100, 32, 2, 31, 113, 119, 100,
-				99, 122, 120, 103, 100, 115, 103, 115, 114, 105, 103, 106, 97, 101, 121, 110, 54, 104, 102, 55, 98, 121,
-				97, 98, 99, 101, 100, 102, 103, 20, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116,
-				117, 118, 119, 120, 121, 122, 60, 18, -32, 9, 59, 28, 20, -48, -46, 2, -106, 73, 6, -48, 21, -51, 91, 7,
-				6, -16, -121, -42, 18, 5, -64, 57, 48, 4, -2, 123, 3, -3, 2, -14, -1, -1, -23, 112, 17, 61, -79, 80,
-				-10, 89 };
-		byte[] rdbHeader = new byte[9];
-		System.arraycopy(rdbData, 0, rdbHeader, 0, 9);
-		RDBParser rdbParser = RDBParserFactory.createRDBParser(rdbHeader);
-		rdbParser.parse(rdbData);
-		RedisDB redisDB = rdbParser.getRedisDBs().iterator().next();
-		List<String> commands = redisDB.getCommands();
-		logger.info(commands.get(0));
+		byte[] zipListDataBuffer = new byte[] { 119, 0, 0, 0, 58, 0, 0, 0, 9, 0, 0, -14, 2, -3, 2, -2, 123, 3, -64, 57,
+				48, 4, -16, -121, -42, 18, 5, -48, 21, -51, 91, 7, 6, -48, -46, 2, -106, 73, 6, 18, 97, 97, 115, 100,
+				97, 115, 100, 113, 119, 100, 99, 122, 120, 103, 100, 115, 103, 115, 20, 58, 97, 97, 115, 100, 97, 115,
+				100, 113, 119, 100, 99, 122, 120, 103, 100, 115, 103, 115, 114, 105, 103, 106, 97, 101, 121, 110, 54,
+				104, 102, 55, 98, 121, 97, 98, 99, 101, 100, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113,
+				114, 115, 116, 117, 118, 119, 120, 121, 122, -1 };
+		RedisZipListObject ziplist = new RedisZipListObject(zipListDataBuffer);
+		assertEquals(ziplist.getElementCount(), 9);
+
 	}
 }

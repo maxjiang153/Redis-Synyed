@@ -371,6 +371,15 @@ public class RedisZipListObject extends RedisObject {
 		return this.buffer;
 	}
 
+	/**
+	 * 获取list中元素数量的方法
+	 * 
+	 * @return list中元素数量
+	 */
+	public int getElementCount() {
+		return this.entryCount;
+	}
+
 	/*
 	 * @see java.lang.Object#toString()
 	 */
