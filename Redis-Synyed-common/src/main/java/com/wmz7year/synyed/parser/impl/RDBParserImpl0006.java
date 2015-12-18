@@ -17,6 +17,7 @@ import com.wmz7year.synyed.exception.RedisRDBException;
 import com.wmz7year.synyed.parser.RDBParser;
 import com.wmz7year.synyed.parser.entry.RedisDB;
 import com.wmz7year.synyed.parser.entry.RedisHashObject;
+import com.wmz7year.synyed.parser.entry.RedisHashZipMap;
 import com.wmz7year.synyed.parser.entry.RedisListObject;
 import com.wmz7year.synyed.parser.entry.RedisObject;
 import com.wmz7year.synyed.parser.entry.RedisRDBCommand;
@@ -223,8 +224,7 @@ public class RDBParserImpl0006 implements RDBParser {
 			byte[] buffer = aux.getBuffer();
 			switch (type) {
 			case REDIS_RDB_TYPE_HASH_ZIPMAP:
-				System.out.println("REDIS_RDB_TYPE_HASH_ZIPMAP");
-				// TODO
+				result = new RedisHashZipMap(buffer);
 				break;
 			case REDIS_RDB_TYPE_LIST_ZIPLIST:
 				result = new RedisZipListObject(buffer);
@@ -244,6 +244,7 @@ public class RDBParserImpl0006 implements RDBParser {
 			default:
 				throw new RedisRDBException("未知的RDB数据类型：" + type);
 			}
+			
 			System.out.println("集合对象");
 		} else {
 			throw new RedisRDBException("未知的类型：" + type);

@@ -15,6 +15,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.wmz7year.synyed.Booter;
 import com.wmz7year.synyed.parser.entry.RedisDB;
+import com.wmz7year.synyed.parser.entry.RedisHashZipMap;
 import com.wmz7year.synyed.parser.entry.RedisZipListObject;
 
 /**
@@ -103,5 +104,16 @@ public class RDBParserImpl0006Test {
 		RedisZipListObject ziplist = new RedisZipListObject(zipListDataBuffer);
 		assertEquals(ziplist.getElementCount(), 9);
 
+	}
+
+	/**
+	 * 测试解析各种类型元素的hash zip mao
+	 */
+	@Test
+	public void testHashZipMapObject() throws Exception {
+		byte[] zipMapDataBuffer = new byte[] { 0x18, 0x02, 0x06, 0x4d, 0x4b, 0x44, 0x31, 0x47, 0x36, 0x01, 0x00, 0x32,
+				0x05, 0x59, 0x4e, 0x4e, 0x58, 0x4b, 0x04, 0x00, 0x46, 0x37, 0x54, 0x49, (byte) 0xff };
+		RedisHashZipMap zipmap = new RedisHashZipMap(zipMapDataBuffer);
+		assertEquals(zipmap.getElementCount(), 2);
 	}
 }
