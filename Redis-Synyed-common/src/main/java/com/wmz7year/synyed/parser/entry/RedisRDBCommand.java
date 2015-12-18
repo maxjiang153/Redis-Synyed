@@ -50,6 +50,22 @@ public class RedisRDBCommand {
 			StringBuilder builder = new StringBuilder();
 			builder.append(LPUSH).append(' ').append(key.toCommand()).append(' ').append(value.toCommand());
 			commands.add(builder.toString());
+		} else if (value instanceof RedisHashZipList) {
+			RedisHashZipList hashZipList = (RedisHashZipList) value;
+			if (hashZipList.getElementCount() % 2 == 0) {
+				List<String> elements = hashZipList.getElements();
+				for (int i = 0; i < hashZipList.getElementCount(); i += 2) {
+					StringBuilder builder = new StringBuilder();
+					builder.append(HSET).append(' ').append(key.toCommand()).append(' ').append(elements.get(i))
+							.append(' ').append(elements.get(i + 1));
+					commands.add(builder.toString());
+				}
+			} else {
+				System.out.println("RedisHashZipList value：" + value);
+			}
+		} else {
+			System.out.println("value：" + value);
+
 		}
 		// TODO 过期时间
 		return commands;

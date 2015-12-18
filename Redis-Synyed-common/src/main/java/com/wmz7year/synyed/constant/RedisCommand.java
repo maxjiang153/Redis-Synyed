@@ -116,5 +116,16 @@ public enum RedisCommand {
 	 * 		SET key value
 	 * </pre>
 	 */
-	SET
+	SET,
+
+	/**
+	 * 向指定的key设置 k v值的方法<br>
+	 * 
+	 * http://redis.io/commands/hset<br>
+	 * 
+	 * <pre>
+	 * 		HSET key field value
+	 * </pre>
+	 */
+	HSET
 }

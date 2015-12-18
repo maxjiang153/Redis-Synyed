@@ -9,7 +9,6 @@ import static com.wmz7year.synyed.util.NumberUtil.byte2Long;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import com.wmz7year.synyed.exception.RedisRDBException;
@@ -45,12 +44,6 @@ public class RedisHashZipList extends RedisObject {
 	 * 当前元素读取的字节数
 	 */
 	private int elementReadLength;
-
-	/**
-	 * 是否反转过的表识位<br>
-	 * 在rdb文件数据还原成redis命令时 list参数顺序是反的 需要进行反转操作
-	 */
-	private boolean hasReverse = false;
 
 	public RedisHashZipList(byte[] buffer) throws RedisRDBException {
 		this.buffer = buffer;
@@ -352,11 +345,6 @@ public class RedisHashZipList extends RedisObject {
 	@Override
 	public String toCommand() {
 		StringBuilder result = new StringBuilder();
-		// 反转list 用于生成命令
-		if (!hasReverse) {
-			Collections.reverse(elements);
-			hasReverse = true;
-		}
 		for (String element : elements) {
 			result.append(element).append(' ');
 		}
@@ -381,6 +369,15 @@ public class RedisHashZipList extends RedisObject {
 	 */
 	public int getElementCount() {
 		return this.entryCount;
+	}
+
+	/**
+	 * 获取元素列表的方法
+	 * 
+	 * @return 元素列表集合
+	 */
+	public List<String> getElements() {
+		return this.elements;
 	}
 
 	/*
