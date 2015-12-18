@@ -127,5 +127,15 @@ public enum RedisCommand {
 	 * 		HSET key field value
 	 * </pre>
 	 */
-	HSET
+	HSET,
+
+	/**
+	 * 向指定key插入sort set值的方法<br>
+	 * http://redis.io/commands/zadd<br>
+	 * 
+	 * <pre>
+	 * 		ZADD key field value
+	 * </pre>
+	 */
+	ZADD
 }

@@ -41,18 +41,21 @@ public class RedisRDBCommand {
 	 */
 	public List<String> getCommands() {
 		List<String> commands = new ArrayList<String>();
-		// string 类型的value 生成redis命令 set key value
-		if (value instanceof RedisStringObject) {
+		if (value instanceof RedisStringObject) { // string 类型的value 生成redis命令
+													// set key value
 			StringBuilder builder = new StringBuilder();
 			builder.append(SET).append(' ').append(key.toCommand()).append(' ').append(value.toCommand());
 			commands.add(builder.toString());
-		} else if (value instanceof RedisZipListObject) {
+		} else if (value instanceof RedisZipListObject) { // list类型的value
+															// 生成redis lpush key
+															// value value..
 			StringBuilder builder = new StringBuilder();
 			builder.append(LPUSH).append(' ').append(key.toCommand()).append(' ').append(value.toCommand());
 			commands.add(builder.toString());
 		} else if (value instanceof RedisHashZipList) {
 			RedisHashZipList hashZipList = (RedisHashZipList) value;
-			if (hashZipList.getElementCount() % 2 == 0) {
+			if (hashZipList.getElementCount() % 2 == 0) { // hset类型数据 生成命令 hset
+															// key flag value
 				List<String> elements = hashZipList.getElements();
 				for (int i = 0; i < hashZipList.getElementCount(); i += 2) {
 					StringBuilder builder = new StringBuilder();
@@ -63,6 +66,10 @@ public class RedisRDBCommand {
 			} else {
 				System.out.println("RedisHashZipList value：" + value);
 			}
+		} else if (value instanceof RedisZSetZipList) { //  zadd key field value field value field value
+			StringBuilder builder = new StringBuilder();
+			builder.append(ZADD).append(' ').append(key.toCommand()).append(' ').append(value.toCommand());
+			commands.add(builder.toString());
 		} else {
 			System.out.println("value：" + value);
 
