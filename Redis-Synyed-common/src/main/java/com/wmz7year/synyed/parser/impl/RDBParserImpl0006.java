@@ -25,6 +25,7 @@ import com.wmz7year.synyed.parser.entry.RedisSetIntSet;
 import com.wmz7year.synyed.parser.entry.RedisSetObject;
 import com.wmz7year.synyed.parser.entry.RedisStringObject;
 import com.wmz7year.synyed.parser.entry.RedisZSetObject;
+import com.wmz7year.synyed.parser.entry.RedisZSetZipList;
 import com.wmz7year.synyed.parser.entry.RedisZipListObject;
 import com.wmz7year.synyed.util.CRC64;
 import com.wmz7year.synyed.util.LZFDecoder;
@@ -234,8 +235,7 @@ public class RDBParserImpl0006 implements RDBParser {
 				result = new RedisSetIntSet(buffer);
 				break;
 			case REDIS_RDB_TYPE_ZSET_ZIPLIST:
-				System.out.println("REDIS_RDB_TYPE_ZSET_ZIPLIST");
-				// TODO
+				result = new RedisZSetZipList(buffer);
 				break;
 			case REDIS_RDB_TYPE_HASH_ZIPLIST:
 				System.out.println("REDIS_RDB_TYPE_HASH_ZIPLIST");
