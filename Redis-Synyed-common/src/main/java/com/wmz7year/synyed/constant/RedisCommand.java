@@ -94,5 +94,16 @@ public enum RedisCommand {
 	 * 		DEL key
 	 * </pre>
 	 */
-	DEL
+	DEL,
+
+	/**
+	 * 向指定KEY设置值<br>
+	 * 
+	 * http://redis.io/commands/set<br>
+	 * 
+	 * <pre>
+	 * 		SET key value
+	 * </pre>
+	 */
+	SET
 }

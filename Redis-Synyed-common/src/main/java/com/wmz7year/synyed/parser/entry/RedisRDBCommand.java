@@ -1,6 +1,8 @@
 package com.wmz7year.synyed.parser.entry;
 
-import java.util.Collections;
+import static com.wmz7year.synyed.constant.RedisCommand.*;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -32,9 +34,20 @@ public class RedisRDBCommand {
 		this.expiretime = expiretime;
 	}
 
+	/**
+	 * 根据value值分析生成redis命令的方法<br>
+	 * 
+	 * @return redis命令集合
+	 */
 	public List<String> getCommands() {
-		// TODO 分析key value 转换成redis命令
-		return Collections.emptyList();
+		List<String> commands = new ArrayList<String>();
+		// string 类型的value 生成redis命令 set key value
+		if (value instanceof RedisStringObject) {
+			StringBuilder builder = new StringBuilder();
+			builder.append(SET).append(' ').append(key.toCommand()).append(' ').append(value.toCommand());
+			commands.add(builder.toString());
+		}
+		return commands;
 	}
 
 	/*
