@@ -2,13 +2,19 @@ package com.wmz7year.synyed.parser;
 
 import static org.junit.Assert.*;
 
+import java.util.Collection;
+import java.util.List;
+
 import org.apache.commons.io.HexDump;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.wmz7year.synyed.Booter;
+import com.wmz7year.synyed.parser.entry.RedisDB;
 
 /**
  * redis rdb0006版本的解析器测试
@@ -22,8 +28,9 @@ import com.wmz7year.synyed.Booter;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = Booter.class)
 public class RDBParserImpl0006Test {
-	private static final byte[] rdbData = new byte[] { 82, 69, 68, 73, 83, 48, 48, 48, 54, -1, -36, -77, 67, -16, 90,
-			-36, -14, 86 };
+	private static final Logger logger = LoggerFactory.getLogger(RDBParserImpl0006Test.class);
+	private static final byte[] rdbData = new byte[] { 82, 69, 68, 73, 83, 48, 48, 48, 54, -2, 0, 0, 1, 97, 1, 98, 0, 1,
+			99, 1, 100, 0, 1, 98, 1, 99, -1, 16, 79, 24, -53, 114, -99, 102, 122 };
 
 	/**
 	 * 显示RDB字节内容以及格式化
@@ -42,6 +49,14 @@ public class RDBParserImpl0006Test {
 		System.arraycopy(rdbData, 0, rdbHeader, 0, 9);
 		RDBParser rdbParser = RDBParserFactory.createRDBParser(rdbHeader);
 		rdbParser.parse(rdbData);
+
+		Collection<RedisDB> redisDBs = rdbParser.getRedisDBs();
+		for (RedisDB redisDB : redisDBs) {
+			List<String> commands = redisDB.getCommands();
+			for (String command : commands) {
+				logger.info("redis command rdb:" + redisDB.getNum() + " command：" + command);
+			}
+		}
 	}
 
 	/**

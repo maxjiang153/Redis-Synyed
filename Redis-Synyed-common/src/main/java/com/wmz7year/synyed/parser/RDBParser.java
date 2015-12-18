@@ -1,6 +1,9 @@
 package com.wmz7year.synyed.parser;
 
+import java.util.Collection;
+
 import com.wmz7year.synyed.exception.RedisRDBException;
+import com.wmz7year.synyed.parser.entry.RedisDB;
 
 /**
  * Redis rdb文件解析器<br>
@@ -26,12 +29,17 @@ public interface RDBParser {
 	/**
 	 * 执行解析的方法<br>
 	 * 
-	 * // TODO 解析为RDB对象 或者解析成命令
-	 * 
 	 * @param rdbContent
 	 *            rdb文件内容
 	 * @throws RedisRDBException
 	 *             当解析过程中发生错误抛出该异常
 	 */
 	public void parse(byte[] rdbContent) throws RedisRDBException;
+
+	/**
+	 * 获取解析出的数据库列表的方法
+	 * 
+	 * @return redis数据库列表
+	 */
+	public Collection<RedisDB> getRedisDBs();
 }

@@ -5,6 +5,7 @@ import static com.wmz7year.synyed.constant.RedisRDBConstant.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -696,6 +697,14 @@ public class RDBParserImpl0006 implements RDBParser {
 				| (((long) buffer[2] & 0xff) << 16) | (((long) buffer[1] & 0xff) << 8) | (((long) buffer[0] & 0xff)));
 	}
 
+	/*
+	 * @see com.wmz7year.synyed.parser.RDBParser#getRedisDBs()
+	 */
+	@Override
+	public Collection<RedisDB> getRedisDBs() {
+		return this.redisDBs.values();
+	}
+
 	/**
 	 * 封装rdb数据长度已经是否编码的实体类
 	 * 
@@ -736,4 +745,5 @@ public class RDBParserImpl0006 implements RDBParser {
 			return this.len;
 		}
 	}
+
 }

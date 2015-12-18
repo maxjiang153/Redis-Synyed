@@ -45,4 +45,13 @@ public class RedisDB {
 		command.addAll(rdbCommand.getCommands());
 	}
 
+	/**
+	 * 获取rdb中所有需要同步的命令列表的方法
+	 * 
+	 * @return redis命令列表集合
+	 */
+	public List<String> getCommands() {
+		return this.command;
+	}
+
 }
