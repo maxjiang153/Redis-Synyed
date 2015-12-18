@@ -128,60 +128,8 @@ public class RedisProtocolParser {
 	 *             当解析过程中出现问题则抛出该异常
 	 */
 	public void read(ByteBuffer byteBuffer) throws RedisProtocolException {
-		// 获取数据包内容的长度
-		int dataLength = byteBuffer.limit();
-		// 创建对应大小的缓冲区
-		byte[] dataBuffer = new byte[dataLength];
-		// 读取数据
-		byteBuffer.get(dataBuffer);
-		// 获取当前缓冲区剩余可用空间
-		int currentCapacity = 0;
-		if (limit > readFlag) {
-			currentCapacity = (maxLength - limit) + readFlag;
-		} else if (limit == readFlag) {
-			currentCapacity = maxLength;
-		} else {
-			currentCapacity = maxLength - ((maxLength - readFlag) + limit);
-		}
-
-		// 判断缓冲区容量是否可以装得下此次来的数据 如果不能则扩充数组长度
-		if (currentCapacity < dataLength) {
-			byte[] tempBuffer = new byte[maxLength + (dataLength - currentCapacity)];
-			if (limit > readFlag) { // 判断是否是连续拷贝
-				System.arraycopy(buffer, readFlag, tempBuffer, 0, (limit - currentCapacity));
-				limit = limit - readFlag; // 重置写入标识位
-				maxLength = buffer.length;
-			} else if (limit == readFlag) { // 读取与写入一样 重置缓冲区
-				limit = 0; // 重置写入标识位
-				maxLength = buffer.length;
-			} else { // 分开拷贝
-				System.arraycopy(buffer, readFlag, tempBuffer, 0, (maxLength - readFlag));
-				System.arraycopy(buffer, 0, tempBuffer, (maxLength - readFlag), limit);
-				maxLength = buffer.length;
-			}
-			buffer = null;
-			buffer = tempBuffer;
-			tempBuffer = null;
-			readFlag = 0; // 复位读取的地方
-		}
-
-		// 判断是否需要中断复制
-		if ((maxLength - limit) < dataLength) {
-			// 分段的长度
-			int flag = (maxLength - limit);
-			// 第一次复制 从可以写入位置一直复制到数组结束
-			System.arraycopy(dataBuffer, 0, buffer, limit, flag);
-			// 第二次复制 从第一个元素开始写直到写完
-			System.arraycopy(dataBuffer, flag, buffer, 0, dataLength - flag);
-			limit = dataLength - flag;
-			isFull = (limit == readFlag); // 判断是否为写满
-		} else {
-			System.arraycopy(dataBuffer, 0, buffer, limit, dataLength);
-			// 更新limit位置
-			limit = dataLength + limit;
-			isFull = (limit == readFlag); // 判断是否为写满
-		}
-		dataBuffer = null;
+		// 拷贝数据到缓冲区的方法
+		copyDataToBuffer(byteBuffer);
 
 		// 解析数据包的方法
 		while (true) {
@@ -206,7 +154,78 @@ public class RedisProtocolParser {
 					this.packets.add(packet);
 				}
 			}
+		}
+	}
 
+	/**
+	 * 拷贝数据到缓冲区的方法<br>
+	 * 循环读写一个固定的缓冲区，当数据量过大的时候会对缓冲区自动扩容<br>
+	 * 
+	 * @param byteBuffer
+	 *            需要拷贝的数据
+	 * @throws RedisProtocolException
+	 *             拷贝过程中发生问题抛出该异常
+	 */
+	private void copyDataToBuffer(ByteBuffer byteBuffer) throws RedisProtocolException {
+		try {
+			// 获取数据包内容的长度
+			int dataLength = byteBuffer.limit();
+			// 创建对应大小的缓冲区
+			byte[] dataBuffer = new byte[dataLength];
+			// 读取数据
+			byteBuffer.get(dataBuffer);
+			// 获取当前缓冲区剩余可用空间
+			int currentCapacity = 0;
+			if (limit > readFlag) {
+				currentCapacity = (maxLength - limit) + readFlag;
+			} else if (limit == readFlag) {
+				currentCapacity = maxLength;
+			} else {
+				currentCapacity = maxLength - ((maxLength - readFlag) + limit);
+			}
+
+			// 判断缓冲区容量是否可以装得下此次来的数据 如果不能则扩充数组长度
+			if (currentCapacity < dataLength) {
+				byte[] tempBuffer = new byte[maxLength + (dataLength - currentCapacity)];
+				if (limit > readFlag) { // 判断是否是连续拷贝
+					System.arraycopy(buffer, readFlag, tempBuffer, 0, (limit - currentCapacity));
+					limit = limit - readFlag; // 重置写入标识位
+				} else if (limit == readFlag) { // 读取与写入一样 重置缓冲区
+					limit = 0; // 重置写入标识位
+				} else { // 分开拷贝
+					System.arraycopy(buffer, readFlag, tempBuffer, 0, (maxLength - readFlag));
+					System.arraycopy(buffer, 0, tempBuffer, (maxLength - readFlag), limit);
+				}
+				buffer = null;
+				buffer = tempBuffer;
+				tempBuffer = null;
+				readFlag = 0; // 复位读取的地方
+				maxLength = buffer.length;
+			}
+
+			// 判断是否需要中断复制
+			if ((maxLength - limit) < dataLength) {
+				// 分段的长度
+				int flag = (maxLength - limit);
+				if (flag == 0) {
+					readFlag = 0;
+				}
+				// 第一次复制 从可以写入位置一直复制到数组结束
+				System.arraycopy(dataBuffer, 0, buffer, limit, flag);
+				// 第二次复制 从第一个元素开始写直到写完
+				System.arraycopy(dataBuffer, flag, buffer, 0, dataLength - flag);
+				limit = dataLength - flag;
+				isFull = (limit == readFlag); // 判断是否为写满
+			} else {
+				System.arraycopy(dataBuffer, 0, buffer, limit, dataLength);
+				// 更新limit位置
+				limit = dataLength + limit;
+				isFull = (limit == readFlag); // 判断是否为写满
+			}
+
+			dataBuffer = null;
+		} catch (Exception e) {
+			throw new RedisProtocolException("拷贝数据异常", e);
 		}
 	}
 
@@ -229,7 +248,7 @@ public class RedisProtocolParser {
 			if (currentPacket == null) {
 				currentPacket = new byte[readInc];
 				// 读取第一个字节 判断类型
-				currentPacketType = buffer[readFlag++];
+				currentPacketType = readByte();
 			}
 
 			// 解析响应数据包内容
@@ -247,30 +266,38 @@ public class RedisProtocolParser {
 			} else {
 				throw new RedisProtocolException("未知的数据包类型：" + currentPacketType);
 			}
+			// 如果存在响应包 则执行清理各种标识位操作
 			if (responsePacket != null) {
-				// 清空当前处理的数据包
-				cleanCurrentPacket();
-				// 清空当前数据包类型
-				this.currentPacketType = 0;
-				// 清空当前读取的数据包长度 bulk专用
-				this.readedBulkLength = 0;
-				// 清空当前数据包长度 bulk专用
-				this.bulkLength = -2;
-				// 还原bulk数据包长度正负标识位
-				this.bulkNeg = 0;
-				// 清空crlf标识位
-				this.bulkCrLfReaded = false;
-
-				// 如果数组类型数据包读取完毕 则清空对应的标识位
-				if (arrayPacket != null && arrayPacket.getPackets().size() == arrayLength) {
-					arrayLength = -2;
-					arrayPacket = null;
-					arrayCrLfReaded = false;
-				}
+				clean();
 			}
 			return responsePacket;
 		} catch (Exception e) {
 			throw new RedisProtocolException(e);
+		}
+	}
+
+	/**
+	 * 清理各种标识位的方法
+	 */
+	private void clean() {
+		// 清空当前处理的数据包
+		cleanCurrentPacket();
+		// 清空当前数据包类型
+		this.currentPacketType = 0;
+		// 清空当前读取的数据包长度 bulk专用
+		this.readedBulkLength = 0;
+		// 清空当前数据包长度 bulk专用
+		this.bulkLength = -2;
+		// 还原bulk数据包长度正负标识位
+		this.bulkNeg = 0;
+		// 清空crlf标识位
+		this.bulkCrLfReaded = false;
+
+		// 如果数组类型数据包读取完毕 则清空对应的标识位
+		if (arrayPacket != null && arrayPacket.getPackets().size() == arrayLength) {
+			arrayLength = -2;
+			arrayPacket = null;
+			arrayCrLfReaded = false;
 		}
 	}
 
@@ -287,7 +314,7 @@ public class RedisProtocolParser {
 	 * 
 	 * @return 字符串类型数据包
 	 */
-	private RedisPacket processSimpleStringPacket() {
+	private RedisPacket processSimpleStringPacket() throws RedisProtocolException {
 		// 读取数据
 		readData();
 		// 获取完整数据包
@@ -305,7 +332,7 @@ public class RedisProtocolParser {
 	 * 
 	 * @return 复合类型字符串响应数据包
 	 */
-	private RedisPacket processBulkStringsPacket() {
+	private RedisPacket processBulkStringsPacket() throws RedisProtocolException {
 		// 读取复合类型字符串数据长度
 		long result = readBulkStringLength();
 		if (result == -2) {
@@ -320,7 +347,7 @@ public class RedisProtocolParser {
 				if (!hasData()) {
 					break;
 				}
-				byte b = buffer[readFlag++];
+				byte b = readByte();
 				readedBulkLength++;
 				if (readedBulkLength == bulkLength) {
 					appendToCurrentPacket(b);
@@ -429,7 +456,7 @@ public class RedisProtocolParser {
 	 * 
 	 * @return redis数据包对象
 	 */
-	private RedisPacket processIntegerPacket() {
+	private RedisPacket processIntegerPacket() throws RedisProtocolException {
 		// 读取数据
 		readData();
 		// 获取完整数据包
@@ -448,7 +475,7 @@ public class RedisProtocolParser {
 	 * 
 	 * @return 复合类型字符串长度
 	 */
-	private long readBulkStringLength() {
+	private long readBulkStringLength() throws RedisProtocolException {
 		// 判断是否读取过长度信息
 		if (!bulkCrLfReaded) {
 			// 判断是否读取过数据的正负符号
@@ -456,7 +483,7 @@ public class RedisProtocolParser {
 				if (!hasData()) {
 					return -2;
 				}
-				byte isNegByte = buffer[readFlag++];
+				byte isNegByte = readByte();
 				boolean isNeg = isNegByte == '-';
 				if (isNeg) {
 					bulkNeg = -1;
@@ -490,7 +517,7 @@ public class RedisProtocolParser {
 	 * 
 	 * @return 数组类型长
 	 */
-	private long readArrayLength() {
+	private long readArrayLength() throws RedisProtocolException {
 		// 判断是否读取过长度信息
 		if (!arrayCrLfReaded) {
 			if (!hasData()) {
@@ -521,7 +548,7 @@ public class RedisProtocolParser {
 	 * 
 	 * @return 错误类型数据包
 	 */
-	private RedisPacket processErrorPacket() {
+	private RedisPacket processErrorPacket() throws RedisProtocolException {
 		// 读取数据
 		readData();
 		// 获取完整数据包
@@ -538,7 +565,7 @@ public class RedisProtocolParser {
 	 * 读取一行数据的方法<br>
 	 * 以\r\n为结尾 数据读取到currentPacket中
 	 */
-	private void readData() {
+	private void readData() throws RedisProtocolException {
 		while (true) {
 			// 判断数据是否读取完了
 			if (!hasData()) {
@@ -546,10 +573,10 @@ public class RedisProtocolParser {
 				return;
 			}
 			// 读取一个字节
-			byte b = buffer[readFlag++];
+			byte b = readByte();
 			if (b == REDIS_PROTOCOL_R) {
 				if (hasData()) {
-					byte b2 = buffer[readFlag++];
+					byte b2 = readByte();
 					if (b2 == REDIS_PROTOCOL_N) {
 						// 一个完整的包
 						appendToCurrentPacket(b);
@@ -612,13 +639,51 @@ public class RedisProtocolParser {
 	}
 
 	/**
+	 * 从缓冲区读取一个字节的方法<br>
+	 * 
+	 * @return 读取到的字节数据
+	 * @throws RedisProtocolException
+	 *             当没有数据或者读取错误时抛出该异常
+	 */
+	private byte readByte() throws RedisProtocolException {
+		// 判断数据是否读取完了
+		if (!hasData()) {
+			throw new RedisProtocolException("EOF");
+		}
+		// 判断是否能够一次性读取完
+		if ((limit - readFlag) >= 1) {
+			return buffer[readFlag++];
+		} else if (readFlag > limit && (maxLength - readFlag) + limit >= 1) {
+			// 判断读取标志位后的数据是否够读
+			if (maxLength - readFlag >= 1) {
+				return buffer[readFlag++];
+			} else {
+				readFlag = 0;
+				return buffer[readFlag++];
+			}
+		} else {
+			throw new RedisProtocolException("EOF");
+		}
+	}
+
+	/**
 	 * 判断当前缓冲区中是否还有数据的方法<br>
-	 * 判断依据为缓冲区的读取位与写入位是否一样
 	 * 
 	 * @return true为有数 false为没数据
 	 */
 	private boolean hasData() {
-		return readFlag != limit;
+		if ((limit - readFlag) >= 1) {
+			return true;
+		} else if (readFlag > limit && (maxLength - readFlag) + limit >= 1) {
+			if (maxLength - readFlag >= 1) {
+				return true;
+			} else {
+				readFlag = 0;
+				return true;
+			}
+		} else {
+			return false;
+		}
 	}
 
 	/**
