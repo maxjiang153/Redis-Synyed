@@ -16,6 +16,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import com.wmz7year.synyed.Booter;
 import com.wmz7year.synyed.parser.entry.RedisDB;
 import com.wmz7year.synyed.parser.entry.RedisHashZipMap;
+import com.wmz7year.synyed.parser.entry.RedisSetIntSet;
 import com.wmz7year.synyed.parser.entry.RedisZipListObject;
 
 /**
@@ -115,5 +116,16 @@ public class RDBParserImpl0006Test {
 				0x05, 0x59, 0x4e, 0x4e, 0x58, 0x4b, 0x04, 0x00, 0x46, 0x37, 0x54, 0x49, (byte) 0xff };
 		RedisHashZipMap zipmap = new RedisHashZipMap(zipMapDataBuffer);
 		assertEquals(zipmap.getElementCount(), 2);
+	}
+
+	/**
+	 * 测试解析 int set
+	 */
+	@Test
+	public void testIntsetObject() throws Exception {
+		byte[] intsetDataBuffer = new byte[] { 2, 0, 0, 0, 13, 0, 0, 0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8, 0,
+				9, 0, 10, 0, 11, 0, -34, 0, -77, 21 };
+		RedisSetIntSet intset = new RedisSetIntSet(intsetDataBuffer);
+		assertEquals(intset.getElementCount(), 13);
 	}
 }
