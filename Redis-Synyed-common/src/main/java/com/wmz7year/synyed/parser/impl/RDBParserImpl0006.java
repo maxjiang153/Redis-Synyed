@@ -1,6 +1,7 @@
 package com.wmz7year.synyed.parser.impl;
 
 import static com.wmz7year.synyed.constant.RedisRDBConstant.*;
+import static com.wmz7year.synyed.util.NumberUtil.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -9,8 +10,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.Redis.Synyed.util.CRC64;
-import org.Redis.Synyed.util.LZFDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +24,8 @@ import com.wmz7year.synyed.parser.entry.RedisSetObject;
 import com.wmz7year.synyed.parser.entry.RedisStringObject;
 import com.wmz7year.synyed.parser.entry.RedisZSetObject;
 import com.wmz7year.synyed.parser.entry.RedisZipListObject;
+import com.wmz7year.synyed.util.CRC64;
+import com.wmz7year.synyed.util.LZFDecoder;
 
 /**
  * 针对0006版本的redis rdb数据文件解析器
@@ -654,47 +655,6 @@ public class RDBParserImpl0006 implements RDBParser {
 		}
 		int flag = bis.read(buf, start, num);
 		return flag == num;
-	}
-
-	/**
-	 * byte数组转换为int值的方法<br>
-	 * 
-	 * 
-	 * @param buffer
-	 *            需要转换的byte数组
-	 * @return 转换后的int值
-	 * @throws RedisRDBException
-	 *             当参数不正确时会抛出该异常
-	 */
-	private int byte2Int(byte[] buffer) throws RedisRDBException {
-		if (buffer == null) {
-			throw new NullPointerException();
-		}
-		if (buffer.length != 4) {
-			throw new RedisRDBException("Error buffer length can not cover bytes to int:" + Arrays.toString(buffer));
-		}
-		return (((buffer[3]) << 24) | ((buffer[2] & 0xff) << 16) | ((buffer[1] & 0xff) << 8) | ((buffer[0] & 0xff)));
-	}
-
-	/**
-	 * byte数组转换为long值的方法
-	 * 
-	 * @param buffer
-	 *            需要转换的byte数组
-	 * @return 转换后的long类型值
-	 * @throws RedisRDBException
-	 *             当参数不正确时会抛出该异常
-	 */
-	private long byte2Long(byte[] buffer) throws RedisRDBException {
-		if (buffer == null) {
-			throw new NullPointerException();
-		}
-		if (buffer.length != 8) {
-			throw new RedisRDBException("Error buffer length can not cover bytes to int:" + Arrays.toString(buffer));
-		}
-		return ((((long) buffer[7]) << 56) | (((long) buffer[6] & 0xff) << 48) | (((long) buffer[5] & 0xff) << 40)
-				| (((long) buffer[4] & 0xff) << 32) | (((long) buffer[3] & 0xff) << 24)
-				| (((long) buffer[2] & 0xff) << 16) | (((long) buffer[1] & 0xff) << 8) | (((long) buffer[0] & 0xff)));
 	}
 
 	/*

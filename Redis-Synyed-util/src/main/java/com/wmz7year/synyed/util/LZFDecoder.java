@@ -1,4 +1,4 @@
-package org.Redis.Synyed.util;
+package com.wmz7year.synyed.util;
 
 /**
  * lzf数据解压缩工具类

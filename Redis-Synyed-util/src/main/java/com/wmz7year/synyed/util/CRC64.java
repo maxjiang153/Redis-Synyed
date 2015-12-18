@@ -1,4 +1,4 @@
-package org.Redis.Synyed.util;
+package com.wmz7year.synyed.util;
 
 /**
  * CRC64校验工具类<br>
