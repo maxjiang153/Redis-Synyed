@@ -97,6 +97,17 @@ public enum RedisCommand {
 	DEL,
 
 	/**
+	 * 向一个list中添加值<br>
+	 * 
+	 * http://redis.io/commands/lpush<br>
+	 * 
+	 * <pre>
+	 * 		LPUSH key value1 value2 value3...
+	 * </pre>
+	 */
+	LPUSH,
+
+	/**
 	 * 向指定KEY设置值<br>
 	 * 
 	 * http://redis.io/commands/set<br>

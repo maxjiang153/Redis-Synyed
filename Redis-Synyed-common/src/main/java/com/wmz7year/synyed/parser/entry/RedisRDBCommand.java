@@ -46,7 +46,12 @@ public class RedisRDBCommand {
 			StringBuilder builder = new StringBuilder();
 			builder.append(SET).append(' ').append(key.toCommand()).append(' ').append(value.toCommand());
 			commands.add(builder.toString());
+		} else if (value instanceof RedisZipListObject) {
+			StringBuilder builder = new StringBuilder();
+			builder.append(LPUSH).append(' ').append(key.toCommand()).append(' ').append(value.toCommand());
+			commands.add(builder.toString());
 		}
+		// TODO 过期时间
 		return commands;
 	}
 

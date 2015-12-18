@@ -106,6 +106,6 @@ public class RDBParserImpl0006Test {
 		rdbParser.parse(rdbData);
 		RedisDB redisDB = rdbParser.getRedisDBs().iterator().next();
 		List<String> commands = redisDB.getCommands();
-		System.out.println(commands);
+		logger.info(commands.get(0));
 	}
 }
