@@ -1,15 +1,14 @@
 package com.wmz7year.synyed.parser.entry;
 
+import static com.wmz7year.synyed.constant.RedisRDBConstant.REDIS_ENCODING_ZIPLIST;
 import static com.wmz7year.synyed.constant.RedisRDBConstant.REDIS_LIST;
+import static com.wmz7year.synyed.util.NumberUtil.*;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import com.wmz7year.synyed.exception.RedisRDBException;
-
-import static com.wmz7year.synyed.constant.RedisRDBConstant.REDIS_ENCODING_ZIPLIST;
 
 /**
  * redis ziplist类型数据结构对象
@@ -182,14 +181,78 @@ public class RedisZipListObject extends RedisObject {
 		byte bit0 = (byte) ((readEntrySpecialFlag >> 0) & 0x1);
 
 		if (bit7 == 0 && bit6 == 0) { // 6bit字符串
-			// TODO
+			int length = (byte) ((bit5 << 5) + (bit4 << 4) + (bit3 << 3) + (bit2 << 2) + (bit1 << 1) + (bit0 << 0));
+			byte[] buffer = new byte[length];
+			if (!readBytes(buffer, 0, length)) {
+				throw new RedisRDBException("解析错误");
+			}
+			elementReadLength += length;
+			return new String(buffer);
+		} else if (bit7 == 0 && bit6 == 1) { // 2bytes 14bit字符串
+			int length = ((((bit3 << 3) + (bit2 << 2) + (bit1 << 1) + (bit0 << 0) - 1)) << 8) | readByte() & 0xFF;
+			elementReadLength++;
+			byte[] buffer = new byte[length];
+			if (!readBytes(buffer, 0, length)) {
+				throw new RedisRDBException("解析错误");
+			}
+			elementReadLength += length;
+			return new String(buffer);
+		} else if (bit7 == 1 && bit6 == 0) { // 5bytes 字符串长度大于16384
+			byte[] buffer = new byte[4];
+			if (!readBytes(buffer, 0, 4)) {
+				throw new RedisRDBException("解析错误");
+			}
+			elementReadLength += 4;
+			int len = byte2Int(buffer);
+			buffer = new byte[len];
+			if (!readBytes(buffer, 0, len)) {
+				throw new RedisRDBException("解析错误");
+			}
+			return new String(buffer);
+		} else if (bit7 == 1 && bit6 == 1 && bit5 == 0 && bit4 == 0) { // 16bit整数
+			byte[] buffer = new byte[2];
+			if (!readBytes(buffer, 0, 2)) {
+				throw new RedisRDBException("解析错误");
+			}
+			elementReadLength += 2;
+			int result = byte216bitInt(buffer);
+			return String.valueOf(result);
+		} else if (bit7 == 1 && bit6 == 1 && bit5 == 0 && bit4 == 1) { // 32bit整数
+			byte[] buffer = new byte[4];
+			if (!readBytes(buffer, 0, 4)) {
+				throw new RedisRDBException("解析错误");
+			}
+			elementReadLength += 4;
+			int result = byte2Int(buffer);
+			return String.valueOf(result);
+		} else if (bit7 == 1 && bit6 == 1 && bit5 == 1 && bit4 == 0) { // 64bit整数
+			byte[] buffer = new byte[8];
+			if (!readBytes(buffer, 0, 8)) {
+				throw new RedisRDBException("解析错误");
+			}
+			elementReadLength += 8;
+			long result = byte2Long(buffer);
+			return String.valueOf(result);
+		} else if (bit7 == 1 && bit6 == 1 && bit5 == 1 && bit4 == 1 && bit3 == 0 && bit2 == 0 && bit1 == 0
+				&& bit0 == 0) { // 24bit整数
+			byte[] buffer = new byte[3];
+			if (!readBytes(buffer, 0, 3)) {
+				throw new RedisRDBException("解析错误");
+			}
+			elementReadLength += 3;
+			int result = byte224bitInt(buffer);
+			return String.valueOf(result);
+		} else if (bit7 == 1 && bit6 == 1 && bit5 == 1 && bit4 == 1 && bit3 == 1 && bit2 == 1 && bit1 == 1
+				&& bit0 == 0) { // 8bit整数
+			byte result = readByte();
+			elementReadLength++;
+			return String.valueOf(result);
 		} else if (bit7 == 1 && bit6 == 1 && bit5 == 1 && bit4 == 1) { // 4bit整数数据
 			byte result = (byte) ((bit3 << 3) + (bit2 << 2) + (bit1 << 1) + (bit0 << 0) - 1);
 			return String.valueOf(result);
 		} else {
 			throw new RedisRDBException("不支持的entry special符号");
 		}
-		return null;
 	}
 
 	/**
@@ -255,26 +318,6 @@ public class RedisZipListObject extends RedisObject {
 		}
 		int flag = bis.read(buf, start, num);
 		return flag == num;
-	}
-
-	/**
-	 * byte数组转换为int值的方法<br>
-	 * 
-	 * 
-	 * @param buffer
-	 *            需要转换的byte数组
-	 * @return 转换后的int值
-	 * @throws RedisRDBException
-	 *             当参数不正确时会抛出该异常
-	 */
-	private int byte2Int(byte[] buffer) throws RedisRDBException {
-		if (buffer == null) {
-			throw new NullPointerException();
-		}
-		if (buffer.length != 4) {
-			throw new RedisRDBException("Error buffer length can not cover bytes to int:" + Arrays.toString(buffer));
-		}
-		return (((buffer[3]) << 24) | ((buffer[2] & 0xff) << 16) | ((buffer[1] & 0xff) << 8) | ((buffer[0] & 0xff)));
 	}
 
 	/*

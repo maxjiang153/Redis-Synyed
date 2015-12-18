@@ -33,6 +33,44 @@ public class NumberUtil {
 	}
 
 	/**
+	 * byte数组转换为16bit int值的方法<br>
+	 * 
+	 * 
+	 * @param buffer
+	 *            需要转换的byte数组
+	 * @return 转换后的int值
+	 */
+	public static int byte216bitInt(byte[] buffer) {
+		if (buffer == null) {
+			throw new NullPointerException();
+		}
+		if (buffer.length != 2) {
+			throw new IllegalArgumentException(
+					"Error buffer length can not cover bytes to int:" + Arrays.toString(buffer));
+		}
+		return (((buffer[1] & 0xff) << 8) | ((buffer[0] & 0xff)));
+	}
+
+	/**
+	 * byte数组转换为24bit int值的方法<br>
+	 * 
+	 * 
+	 * @param buffer
+	 *            需要转换的byte数组
+	 * @return 转换后的int值
+	 */
+	public static int byte224bitInt(byte[] buffer) {
+		if (buffer == null) {
+			throw new NullPointerException();
+		}
+		if (buffer.length != 3) {
+			throw new IllegalArgumentException(
+					"Error buffer length can not cover bytes to int:" + Arrays.toString(buffer));
+		}
+		return (((buffer[2] & 0xff) << 16) | ((buffer[1] & 0xff) << 8) | ((buffer[0] & 0xff)));
+	}
+
+	/**
 	 * byte数组转换为long值的方法
 	 * 
 	 * @param buffer
