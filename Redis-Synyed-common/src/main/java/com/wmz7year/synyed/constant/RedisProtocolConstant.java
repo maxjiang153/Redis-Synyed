@@ -23,11 +23,11 @@ public class RedisProtocolConstant {
 	/**
 	 * \r byte类型 换行符常量
 	 */
-	public static final byte REDIS_PROTOCOL_R = '\r';
+	public static final byte REDIS_PROTOCOL_CR = '\r';
 	/**
 	 * \n byte类型 回车符号常量
 	 */
-	public static final byte REDIS_PROTOCOL_N = '\n';
+	public static final byte REDIS_PROTOCOL_LF = '\n';
 	/**
 	 * redis字符串类型
 	 */

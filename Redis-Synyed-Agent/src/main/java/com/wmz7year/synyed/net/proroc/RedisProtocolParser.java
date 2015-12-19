@@ -7,6 +7,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -39,6 +41,8 @@ import com.wmz7year.synyed.packet.redis.RedisSimpleStringPacket;
 @Component
 @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)
 public class RedisProtocolParser {
+	private static final Logger logger = LoggerFactory.getLogger(RedisProtocolParser.class);
+
 	/**
 	 * 缓冲区大小 1M
 	 */
@@ -75,7 +79,7 @@ public class RedisProtocolParser {
 	/**
 	 * 读取数据包的自动扩容数量
 	 */
-	private int readInc = 128;
+	private int readInc = 512;
 	/**
 	 * 复合类型字符串长度是否读取过的标识为<br>
 	 * 只在复合类型字符串响应数据时才使用
@@ -133,26 +137,13 @@ public class RedisProtocolParser {
 
 		// 解析数据包的方法
 		while (true) {
-			if (!hasData()) {
+			// 当没有数据时退出读取
+			if (!hasRemaining()) {
 				break;
 			}
-			if (this.arrayPacket != null) {
-				RedisPacket packet = decodePacket();
-				if (packet != null) {
-					arrayPacket.addPacket(packet);
-
-					// 如果数组类型数据包读取完毕 则清空对应的标识位
-					if (arrayPacket.getPackets().size() == arrayLength) {
-						arrayLength = -2;
-						arrayPacket = null;
-						arrayCrLfReaded = false;
-					}
-				}
-			} else {
-				RedisPacket packet = decodePacket();
-				if (packet != null) {
-					this.packets.add(packet);
-				}
+			RedisPacket packet = decodePacket();
+			if (packet != null) {
+				this.packets.add(packet);
 			}
 		}
 	}
@@ -170,18 +161,19 @@ public class RedisProtocolParser {
 		try {
 			// 获取数据包内容的长度
 			int dataLength = byteBuffer.limit();
+			if (logger.isDebugEnabled()) {
+				logger.debug("Recv " + dataLength + " bytes data");
+			}
+
 			// 创建对应大小的缓冲区
 			byte[] dataBuffer = new byte[dataLength];
 			// 读取数据
 			byteBuffer.get(dataBuffer);
+
 			// 获取当前缓冲区剩余可用空间
-			int currentCapacity = 0;
-			if (limit > readFlag) {
-				currentCapacity = (maxLength - limit) + readFlag;
-			} else if (limit == readFlag) {
-				currentCapacity = maxLength;
-			} else {
-				currentCapacity = maxLength - ((maxLength - readFlag) + limit);
+			int currentCapacity = getCurrentCapacity();
+			if (logger.isDebugEnabled()) {
+				logger.debug("Current buffer available " + currentCapacity + " byte");
 			}
 
 			// 判断缓冲区容量是否可以装得下此次来的数据 如果不能则扩充数组长度
@@ -230,6 +222,25 @@ public class RedisProtocolParser {
 	}
 
 	/**
+	 * 获取当前缓冲区可用空间的方法
+	 * 
+	 * @return 当前缓冲区可用空间
+	 * @throws RedisProtocolException
+	 *             当出现问题时抛出该异常
+	 */
+	private int getCurrentCapacity() throws RedisProtocolException {
+		int currentCapacity = 0;
+		if (limit > readFlag) {
+			currentCapacity = (maxLength - limit) + readFlag;
+		} else if (limit == readFlag) {
+			currentCapacity = maxLength;
+		} else {
+			currentCapacity = maxLength - ((maxLength - readFlag) + limit);
+		}
+		return currentCapacity;
+	}
+
+	/**
 	 * 解析一个数据包的方法<br>
 	 * 当出现分包断包情况时返回null
 	 * 
@@ -240,7 +251,7 @@ public class RedisProtocolParser {
 	private RedisPacket decodePacket() throws RedisProtocolException {
 		try {
 			// 判断数据是否读取完了
-			if (!hasData()) {
+			if (!hasRemaining()) {
 				return null;
 			}
 
@@ -269,7 +280,21 @@ public class RedisProtocolParser {
 			// 如果存在响应包 则执行清理各种标识位操作
 			if (responsePacket != null) {
 				clean();
+
+				if (this.arrayPacket != null) {
+					arrayPacket.addPacket(responsePacket);
+					if (arrayPacket.getPackets().size() != arrayLength) {
+						return null;
+					} else {
+						arrayLength = -2;
+						arrayCrLfReaded = false;
+						responsePacket = arrayPacket;
+						arrayPacket = null;
+						return responsePacket;
+					}
+				}
 			}
+
 			return responsePacket;
 		} catch (Exception e) {
 			throw new RedisProtocolException(e);
@@ -344,7 +369,7 @@ public class RedisProtocolParser {
 			// 读取对应字节长度的数据
 			while (true) {
 				// 判断数据是否读取完了
-				if (!hasData()) {
+				if (!hasRemaining()) {
 					break;
 				}
 				byte b = readByte();
@@ -439,14 +464,20 @@ public class RedisProtocolParser {
 
 		// 根据数组长度解析对应的数据包
 		while (arrayPacket.getPackets().size() != arrayLength) {
-			RedisPacket element = decodePacket();
-			if (element != null) {
-				arrayPacket.addPacket(element);
+			RedisPacket arrayPacket = decodePacket();
+			if (arrayPacket != null) {
+				return arrayPacket;
 			} else {
 				break;
 			}
 		}
 
+		// 元素未读取完 返回空包
+		if (arrayPacket.getPackets().size() != arrayLength) {
+			// 清空当前数据包内容 等待读取元素
+			clean();
+			return null;
+		}
 		return arrayPacket;
 	}
 
@@ -480,7 +511,7 @@ public class RedisProtocolParser {
 		if (!bulkCrLfReaded) {
 			// 判断是否读取过数据的正负符号
 			if (bulkNeg == 0) {
-				if (!hasData()) {
+				if (!hasRemaining()) {
 					return -2;
 				}
 				byte isNegByte = readByte();
@@ -520,7 +551,7 @@ public class RedisProtocolParser {
 	private long readArrayLength() throws RedisProtocolException {
 		// 判断是否读取过长度信息
 		if (!arrayCrLfReaded) {
-			if (!hasData()) {
+			if (!hasRemaining()) {
 				return -2;
 			}
 			// 读取数据
@@ -568,37 +599,22 @@ public class RedisProtocolParser {
 	private void readData() throws RedisProtocolException {
 		while (true) {
 			// 判断数据是否读取完了
-			if (!hasData()) {
+			if (!hasRemaining()) {
 				// 数据读完了 但是还没有数据包
 				return;
 			}
 			// 读取一个字节
 			byte b = readByte();
-			if (b == REDIS_PROTOCOL_R) {
-				if (hasData()) {
-					byte b2 = readByte();
-					if (b2 == REDIS_PROTOCOL_N) {
-						// 一个完整的包
-						appendToCurrentPacket(b);
-						appendToCurrentPacket(b2);
-						break;
-					} else {
-						// 追加数据
-						appendToCurrentPacket(b2);
-					}
-				} else {
-					appendToCurrentPacket(b);
+			// 追加数据到缓冲区
+			appendToCurrentPacket(b);
+
+			// 当数据为\n时 判断前当前读取到的数据包中倒数第二个字符是否为\r
+			// 如果为\r则说明这是一个完整的包 不需要再读取数据了
+			if (b == REDIS_PROTOCOL_LF) {
+				if (currentPacketWriteFlag > 1 && currentPacket[currentPacketWriteFlag - 2] == REDIS_PROTOCOL_CR) {
+					// 一个完整的包
+					break;
 				}
-			} else if (b == REDIS_PROTOCOL_N) {
-				if (currentPacketWriteFlag > 1) {
-					if (currentPacket[currentPacketWriteFlag - 1] == REDIS_PROTOCOL_R) {
-						// 一个完整的包
-						appendToCurrentPacket(b);
-					}
-				}
-			} else {
-				// 追加数据
-				appendToCurrentPacket(b);
 			}
 		}
 	}
@@ -609,13 +625,15 @@ public class RedisProtocolParser {
 	 * @return 当前数据包的数据
 	 */
 	private byte[] completCurrentPacket() {
+		// 如果当前包中的数据长度小于2 则说明没读取完
 		if (currentPacketWriteFlag < 2) {
 			return null;
 		}
-		byte[] result = new byte[currentPacketWriteFlag - 2];
-		System.arraycopy(currentPacket, 0, result, 0, currentPacketWriteFlag - 2);
-		if (currentPacket[currentPacketWriteFlag - 2] == REDIS_PROTOCOL_R
-				&& currentPacket[currentPacketWriteFlag - 1] == REDIS_PROTOCOL_N) {
+		// 判断当钱包最后两位数据是否是\r\n 如果是则去掉最后两位并且返回一个完整的包
+		if (currentPacket[currentPacketWriteFlag - 2] == REDIS_PROTOCOL_CR
+				&& currentPacket[currentPacketWriteFlag - 1] == REDIS_PROTOCOL_LF) {
+			byte[] result = new byte[currentPacketWriteFlag - 2];
+			System.arraycopy(currentPacket, 0, result, 0, currentPacketWriteFlag - 2);
 			return result;
 		}
 		return null;
@@ -647,7 +665,7 @@ public class RedisProtocolParser {
 	 */
 	private byte readByte() throws RedisProtocolException {
 		// 判断数据是否读取完了
-		if (!hasData()) {
+		if (!hasRemaining()) {
 			throw new RedisProtocolException("EOF");
 		}
 		// 判断是否能够一次性读取完
@@ -671,16 +689,11 @@ public class RedisProtocolParser {
 	 * 
 	 * @return true为有数 false为没数据
 	 */
-	private boolean hasData() {
+	private boolean hasRemaining() {
 		if ((limit - readFlag) >= 1) {
 			return true;
 		} else if (readFlag > limit && (maxLength - readFlag) + limit >= 1) {
-			if (maxLength - readFlag >= 1) {
-				return true;
-			} else {
-				readFlag = 0;
-				return true;
-			}
+			return true;
 		} else {
 			return false;
 		}
@@ -697,8 +710,8 @@ public class RedisProtocolParser {
 			return null;
 		}
 		RedisPacket[] redisPackets = packets.toArray(new RedisPacket[packets.size()]);
+
 		// 执行内存回收操作
-		packets.clear();
 		gc();
 
 		return redisPackets;
@@ -709,6 +722,8 @@ public class RedisProtocolParser {
 	 * 同时对缓冲区内的数据进行整理
 	 */
 	private void gc() {
+		// 清空当前数据包集合
+		packets.clear();
 		// 判断缓冲区大小是否为默认大小
 		if (maxLength == BUFFERSIZE) {
 			return;
