@@ -124,6 +124,16 @@ public class RedisProtocolParser {
 	private RedisArraysPacket arrayPacket;
 
 	/**
+	 * 判断是否是数据传输的包
+	 */
+	private boolean isDatabaseTrancefer = false;
+
+	/**
+	 * 判断是否检查过数据是否是数据
+	 */
+	private boolean isDatabaseTranceferChecked = false;
+
+	/**
 	 * 解析Redis数据包的方法<br>
 	 * 
 	 * @param byteBuffer
@@ -317,6 +327,9 @@ public class RedisProtocolParser {
 		this.bulkNeg = 0;
 		// 清空crlf标识位
 		this.bulkCrLfReaded = false;
+		// 清空数据传输包校验
+		this.isDatabaseTranceferChecked = false;
+		this.isDatabaseTrancefer = false;
 
 		// 如果数组类型数据包读取完毕 则清空对应的标识位
 		if (arrayPacket != null && arrayPacket.getPackets().size() == arrayLength) {
@@ -364,47 +377,22 @@ public class RedisProtocolParser {
 			return null;
 		}
 
-		// 只有在有数据的时候读取数据
-		if (result != 0 && !(readedBulkLength == bulkLength)) {
-			// 读取对应字节长度的数据
-			while (true) {
-				// 判断数据是否读取完了
-				if (!hasRemaining()) {
-					break;
-				}
-				byte b = readByte();
-				readedBulkLength++;
-				if (readedBulkLength == bulkLength) {
-					appendToCurrentPacket(b);
-					// 数据读取完了
-					break;
-				} else {
-					appendToCurrentPacket(b);
-				}
-			}
+		// 如果是空长度的数据 说明一定不是数据传输包 直接返回空字符串
+		if (result == 0) {
+			return readBulkStringPacket();
+		}
+
+		// 读取bulk字符串内容
+		readBulkStringContent();
+
+		// 校验是否是数据传输包
+		if (!isDatabaseTranceferChecked) {
+			checkIsDatabaseTranceferPacket();
 		}
 
 		// 未读取完 直接返回 null
 		if (readedBulkLength != bulkLength) {
 			return null;
-		}
-
-		// 开始判断是否是数据传输的包
-		boolean isDatabaseTrancefer = false;
-		// 读取完了 判断长度是否大于5
-		if (readedBulkLength > 5) {
-			byte b1 = currentPacket[0];
-			byte b2 = currentPacket[1];
-			byte b3 = currentPacket[2];
-			byte b4 = currentPacket[3];
-			byte b5 = currentPacket[4];
-			if (b1 == 'R' && b2 == 'E' && b3 == 'D' && b4 == 'I' && b5 == 'S') {
-				isDatabaseTrancefer = true;
-			} else {
-				isDatabaseTrancefer = false;
-			}
-		} else {
-			isDatabaseTrancefer = false;
 		}
 
 		// 将数据转换为数据传输请求包
@@ -417,18 +405,75 @@ public class RedisProtocolParser {
 			packet.setData(packetData);
 			return packet;
 		} else {
-			// 读取bulk字符串额外的\r\n
-			readData();
-			// 获取完整数据包
-			byte[] packetData = completCurrentPacket();
-			if (packetData == null) {
-				return null;
+			return readBulkStringPacket();
+		}
+	}
+
+	/**
+	 * 读取bulk字符串数据内容的方法
+	 * 
+	 * @throws RedisProtocolException
+	 *             bulk字符串数据内容
+	 */
+	private void readBulkStringContent() throws RedisProtocolException {
+		// 只有在有数据的时候读取数据
+		while (readedBulkLength != bulkLength) {
+			// 判断数据是否读取完了
+			if (!hasRemaining()) {
+				break;
 			}
-			RedisBulkStringPacket packet = new RedisBulkStringPacket(BULKSTRING);
-			packet.setData(new String(packetData));
-			return packet;
+			byte b = readByte();
+			readedBulkLength++;
+			appendToCurrentPacket(b);
+			if (readedBulkLength == bulkLength) {
+				// 数据读取完了
+				break;
+			}
+		}
+	}
+
+	/**
+	 * 检查是否是数据传输包的方法
+	 * 
+	 * @throws RedisProtocolException
+	 *             当出现问题时抛出该异常
+	 */
+	private void checkIsDatabaseTranceferPacket() throws RedisProtocolException {
+		// 读取完了 判断长度是否大于5 如果大于5则读取前五个字节的数据
+		if (readedBulkLength > 5) {
+			byte b1 = currentPacket[0];
+			byte b2 = currentPacket[1];
+			byte b3 = currentPacket[2];
+			byte b4 = currentPacket[3];
+			byte b5 = currentPacket[4];
+			if (b1 == 'R' && b2 == 'E' && b3 == 'D' && b4 == 'I' && b5 == 'S') {
+				this.isDatabaseTrancefer = true;
+			} else {
+				this.isDatabaseTrancefer = false;
+			}
+			isDatabaseTranceferChecked = true;
 		}
 
+	}
+
+	/**
+	 * 读取普通bulk复合字符串类型数据的方法
+	 * 
+	 * @return 普通bulk复合字符串类型数据包对象
+	 * @throws RedisProtocolException
+	 *             当读取出现错误时抛出该异常
+	 */
+	private RedisPacket readBulkStringPacket() throws RedisProtocolException {
+		// 读取bulk字符串额外的\r\n
+		readData();
+		// 获取完整数据包
+		byte[] packetData = completCurrentPacket();
+		if (packetData == null) {
+			return null;
+		}
+		RedisBulkStringPacket packet = new RedisBulkStringPacket(BULKSTRING);
+		packet.setData(new String(packetData));
+		return packet;
 	}
 
 	/**
