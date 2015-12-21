@@ -315,7 +315,12 @@ public class RedisProtocolParser {
 			} else if (currentPacketType == REDIS_PROTOCOL_ERRORS) {
 				responsePacket = processErrorPacket();
 			} else {
-				throw new RedisProtocolException("未知的数据包类型：" + currentPacketType);
+				// FIXME 需要确认发现有时数据包会出现多余的10字节 需要检查redis源码是不是这个问题
+				if (currentPacketType != REDIS_PROTOCOL_LF) {
+					throw new RedisProtocolException("未知的数据包类型：" + currentPacketType);
+				} else {
+					currentPacket = null;
+				}
 			}
 			// 如果存在响应包 则执行清理各种标识位操作
 			if (responsePacket != null) {
