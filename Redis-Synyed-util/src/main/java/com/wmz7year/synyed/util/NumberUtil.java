@@ -33,6 +33,25 @@ public class NumberUtil {
 	}
 
 	/**
+	 * byte数组转换为int值的方法<br>
+	 * 
+	 * 
+	 * @param buffer
+	 *            需要转换的byte数组
+	 * @return 转换后的int值
+	 */
+	public static int byte2BigEndianInt(byte[] buffer) {
+		if (buffer == null) {
+			throw new NullPointerException();
+		}
+		if (buffer.length != 4) {
+			throw new IllegalArgumentException(
+					"Error buffer length can not cover bytes to int:" + Arrays.toString(buffer));
+		}
+		return (((buffer[0]) << 24) | ((buffer[1] & 0xff) << 16) | ((buffer[2] & 0xff) << 8) | ((buffer[3] & 0xff)));
+	}
+
+	/**
 	 * byte数组转换为16bit int值的方法<br>
 	 * 
 	 * 

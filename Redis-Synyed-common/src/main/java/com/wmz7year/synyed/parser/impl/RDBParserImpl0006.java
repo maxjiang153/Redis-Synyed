@@ -610,7 +610,7 @@ public class RDBParserImpl0006 implements RDBParser {
 				result.setLen(REDIS_RDB_LENERR);
 				return result;
 			}
-			result.setLen(byte2Int(intBuf));
+			result.setLen(byte2BigEndianInt(intBuf));
 			return result;
 		}
 	}
