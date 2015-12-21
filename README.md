@@ -11,6 +11,17 @@
 	3、数据一致性保障
 	4、系统高可用性保障
 
+####阶段实现方案：     
+	* 实现单Agent的源Redis到目标Redis数据单向同步
+	* 实现单Agent的源Redis到多个目标Redis的数据单向同步
+	* 实现单Agent的多个源Redis到单个目标Redis的数据单向同步
+	* 实现单Agent的多个源Redis到多个目标Redis的数据单向同步
+	* 实现双Agent之间的源Redis到目标Redis的数据单向同步
+	* 管理后台统一配置Agent的同步策略
+
+####目前进度：
+	- 完成Redis网络协议解析
+	- 完成Redis rdb文件内容解析
 
 ####模块：
 
@@ -28,6 +39,3 @@
 	Synyed-util
 		工具了模块
 		
-	Synyed-test
-		测试模块 用于前期的一些功能测试以及相应的测试论证
-		后期会删除该模块
