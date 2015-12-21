@@ -138,6 +138,6 @@
 		<module>Redis-Synyed-Manager</module>
 		<module>Redis-Synyed-common</module>
 		<module>Redis-Synyed-util</module>
-		<module>Redis-Synyed-test</module>
+		
 	</modules>
 </project>
