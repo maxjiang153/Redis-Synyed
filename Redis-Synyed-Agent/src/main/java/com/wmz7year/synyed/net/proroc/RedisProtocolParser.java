@@ -3,10 +3,16 @@ package com.wmz7year.synyed.net.proroc;
 import static com.wmz7year.synyed.constant.RedisProtocolConstant.*;
 import static com.wmz7year.synyed.constant.RedisCommandSymbol.*;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -14,6 +20,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.wmz7year.synyed.exception.RedisProtocolException;
+import com.wmz7year.synyed.exception.RedisRDBException;
 import com.wmz7year.synyed.packet.redis.RedisArraysPacket;
 import com.wmz7year.synyed.packet.redis.RedisBulkStringPacket;
 import com.wmz7year.synyed.packet.redis.RedisDataBaseTransferPacket;
@@ -134,6 +141,21 @@ public class RedisProtocolParser {
 	private boolean isDatabaseTranceferChecked = false;
 
 	/**
+	 * 数据传输包的临时文件
+	 */
+	private RandomAccessFile tempRandomAccessFile;
+
+	/**
+	 * 数据传输包的临时文件管道
+	 */
+	private FileChannel tempFileChannel;
+
+	/**
+	 * 临时文件对象
+	 */
+	private File tempFile;
+
+	/**
 	 * 解析Redis数据包的方法<br>
 	 * 
 	 * @param byteBuffer
@@ -153,6 +175,14 @@ public class RedisProtocolParser {
 			}
 			RedisPacket packet = decodePacket();
 			if (packet != null) {
+				// 清理临时文件内容
+				if (isDatabaseTrancefer) {
+					cleanTempFile();
+				}
+				// 清空数据传输包校验
+				this.isDatabaseTranceferChecked = false;
+				this.isDatabaseTrancefer = false;
+
 				this.packets.add(packet);
 			}
 		}
@@ -313,8 +343,10 @@ public class RedisProtocolParser {
 
 	/**
 	 * 清理各种标识位的方法
+	 * 
+	 * @throws RedisProtocolException
 	 */
-	private void clean() {
+	private void clean() throws RedisProtocolException {
 		// 清空当前处理的数据包
 		cleanCurrentPacket();
 		// 清空当前数据包类型
@@ -327,15 +359,27 @@ public class RedisProtocolParser {
 		this.bulkNeg = 0;
 		// 清空crlf标识位
 		this.bulkCrLfReaded = false;
-		// 清空数据传输包校验
-		this.isDatabaseTranceferChecked = false;
-		this.isDatabaseTrancefer = false;
 
 		// 如果数组类型数据包读取完毕 则清空对应的标识位
 		if (arrayPacket != null && arrayPacket.getPackets().size() == arrayLength) {
 			arrayLength = -2;
 			arrayPacket = null;
 			arrayCrLfReaded = false;
+		}
+	}
+
+	/**
+	 * 清理临时文件信息的方法
+	 * 
+	 * @throws RedisProtocolException
+	 */
+	private void cleanTempFile() throws RedisProtocolException {
+		try {
+			this.tempFileChannel.close();
+			this.tempRandomAccessFile.close();
+			this.tempFile = null;
+		} catch (IOException e) {
+			throw new RedisProtocolException(e);
 		}
 	}
 
@@ -386,8 +430,26 @@ public class RedisProtocolParser {
 		readBulkStringContent();
 
 		// 校验是否是数据传输包
+
 		if (!isDatabaseTranceferChecked) {
 			checkIsDatabaseTranceferPacket();
+			// 如果是数据传输则创建临时文件
+			if (this.isDatabaseTrancefer) {
+				createTempFileChannel();
+
+				// 写入当前已经读取的内容
+				ByteBuffer buffer = createByteBuffer(currentPacketWriteFlag);
+				buffer.put(currentPacket, 0, currentPacketWriteFlag);
+				buffer.flip();
+
+				while (buffer.hasRemaining()) {
+					try {
+						tempFileChannel.write(buffer);
+					} catch (IOException e) {
+						throw new RedisProtocolException(e);
+					}
+				}
+			}
 		}
 
 		// 未读取完 直接返回 null
@@ -397,12 +459,13 @@ public class RedisProtocolParser {
 
 		// 将数据转换为数据传输请求包
 		if (isDatabaseTrancefer) {
-			byte[] packetData = new byte[currentPacketWriteFlag];
-			System.arraycopy(currentPacket, 0, packetData, 0, currentPacketWriteFlag);
-
 			// 这就是完整的包了
-			RedisDataBaseTransferPacket packet = new RedisDataBaseTransferPacket(DATABASETRANSFER);
-			packet.setData(packetData);
+			RedisDataBaseTransferPacket packet = null;
+			try {
+				packet = new RedisDataBaseTransferPacket(DATABASETRANSFER, tempFile);
+			} catch (RedisRDBException e) {
+				throw new RedisProtocolException(e);
+			}
 			return packet;
 		} else {
 			return readBulkStringPacket();
@@ -690,15 +753,59 @@ public class RedisProtocolParser {
 	 * 
 	 * @param b
 	 *            需要追加的数据
+	 * @throws RedisProtocolException
+	 *             当写入过程中出现问题则抛出该异常
 	 */
-	private void appendToCurrentPacket(byte b) {
-		if (currentPacketWriteFlag == currentPacket.length) {
-			// 扩容
-			byte[] newBuffer = new byte[currentPacketWriteFlag + readInc];
-			System.arraycopy(currentPacket, 0, newBuffer, 0, currentPacketWriteFlag);
-			currentPacket = newBuffer;
+	private void appendToCurrentPacket(final byte b) throws RedisProtocolException {
+		if (this.isDatabaseTrancefer) {
+			ByteBuffer buffer = createByteBuffer(1);
+			buffer.put(b);
+			buffer.flip();
+			while (buffer.hasRemaining()) {
+				try {
+					tempFileChannel.write(buffer);
+				} catch (IOException e) {
+					throw new RedisProtocolException(e);
+				}
+			}
+		} else {
+			if (currentPacketWriteFlag == currentPacket.length) {
+				// 扩容
+				byte[] newBuffer = new byte[currentPacketWriteFlag + readInc];
+				System.arraycopy(currentPacket, 0, newBuffer, 0, currentPacketWriteFlag);
+				currentPacket = newBuffer;
+			}
+			currentPacket[currentPacketWriteFlag++] = b;
 		}
-		currentPacket[currentPacketWriteFlag++] = b;
+	}
+
+	/**
+	 * 创建临时文件管道对象的方法
+	 * 
+	 * @throws RedisProtocolException
+	 *             当发生问题时抛出该异常
+	 */
+	private void createTempFileChannel() throws RedisProtocolException {
+		try {
+			tempFile = new File(FileUtils.getTempDirectory(), System.currentTimeMillis() + ".synyed");
+			tempRandomAccessFile = new RandomAccessFile(tempFile, "rw");
+			this.tempFileChannel = tempRandomAccessFile.getChannel();
+		} catch (FileNotFoundException e) {
+			throw new RedisProtocolException(e);
+		}
+	}
+
+	/**
+	 * 创建bytebuffer空数据对象的方法
+	 * 
+	 * @param size
+	 *            bytebuffer空间
+	 * @return 创建的bytebuffer对象
+	 */
+	private ByteBuffer createByteBuffer(int size) {
+		ByteBuffer buf = ByteBuffer.allocate(size);
+		buf.clear();
+		return buf;
 	}
 
 	/**
