@@ -4,6 +4,8 @@ import static com.wmz7year.synyed.constant.RedisRDBConstant.REDIS_ENCODING_SKIPL
 import static com.wmz7year.synyed.constant.RedisRDBConstant.REDIS_ZSET;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -17,10 +19,10 @@ import java.util.List;
  */
 public class RedisZSetObject extends RedisObject {
 
-	private List<RedisStringObject> elements = null;
+	private List<ZSetValue> elements = null;
 
 	public RedisZSetObject(int zsetlen) {
-		this.elements = new ArrayList<RedisStringObject>(zsetlen);
+		this.elements = new ArrayList<ZSetValue>(zsetlen);
 	}
 
 	/**
@@ -35,7 +37,7 @@ public class RedisZSetObject extends RedisObject {
 		if (!(redisObject instanceof RedisStringObject)) {
 			throw new IllegalStateException("元素类型错误 必须为RedisStringObject类型");
 		}
-		elements.add((int) score, (RedisStringObject) redisObject);
+		elements.add(new ZSetValue(redisObject, score));
 	}
 
 	/*
@@ -60,8 +62,23 @@ public class RedisZSetObject extends RedisObject {
 	@Override
 	public String toCommand() {
 		StringBuilder result = new StringBuilder();
-		for (RedisStringObject redisStringObject : elements) {
-			result.append(redisStringObject.toCommand()).append(' ');
+
+		// 对结果集进行排序
+		Collections.sort(elements, new Comparator<ZSetValue>() {
+
+			/*
+			 * @see java.util.Comparator#compare(java.lang.Object,
+			 * java.lang.Object)
+			 */
+			@Override
+			public int compare(ZSetValue o1, ZSetValue o2) {
+				return o1.getScore() > o2.getScore() ? 1 : 0;
+			}
+
+		});
+		
+		for (ZSetValue zsetValue : elements) {
+			result.append(zsetValue.getRedisObject().toCommand()).append(' ');
 		}
 		if (result.length() > 0 && result.charAt(result.length()) == ' ') {
 			return result.substring(0, result.length() - 1);
@@ -76,4 +93,30 @@ public class RedisZSetObject extends RedisObject {
 		return "RedisZSetObject [elements=" + elements + "]";
 	}
 
+	/**
+	 * 
+	 * @Title: ZSetValue.java
+	 * @Package com.wmz7year.synyed.parser.entry
+	 * @author jiangwei (ydswcy513@gmail.com)
+	 * @date 2015年12月21日 下午3:30:13
+	 * @version V1.0
+	 */
+	private class ZSetValue {
+		private RedisObject redisObject;
+		private double score;
+
+		public ZSetValue(RedisObject redisObject, double score) {
+			this.redisObject = redisObject;
+			this.score = score;
+		}
+
+		public RedisObject getRedisObject() {
+			return redisObject;
+		}
+
+		public double getScore() {
+			return score;
+		}
+
+	}
 }
