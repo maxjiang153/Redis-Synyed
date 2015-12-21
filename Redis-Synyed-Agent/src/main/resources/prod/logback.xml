@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+	<include resource="org/springframework/boot/logging/logback/base.xml" />
+	<logger name="com.laimiya.push" level="INFO" />
+
+	<appender name="debug" class="ch.qos.logback.core.FileAppender">
+		<file>${SERVER_LOG}/debug.log</file>
+		<append>true</append>
+		<prudent>false</prudent>
+		<encoder>
+			<pattern>${FILE_LOG_PATTERN}</pattern>
+		</encoder>
+		<filter class="ch.qos.logback.classic.filter.LevelFilter">
+			<level>DEBUG</level>
+			<onMatch>ACCEPT</onMatch>
+			<onMismatch>DENY</onMismatch>
+		</filter>
+	</appender>
+
+	<appender name="info" class="ch.qos.logback.core.FileAppender">
+		<file>${SERVER_LOG}/info.log</file>
+		<append>true</append>
+		<prudent>false</prudent>
+		<encoder>
+			<pattern>${FILE_LOG_PATTERN}</pattern>
+		</encoder>
+		<filter class="ch.qos.logback.classic.filter.LevelFilter">
+			<level>INFO</level>
+			<onMatch>ACCEPT</onMatch>
+			<onMismatch>DENY</onMismatch>
+		</filter>
+	</appender>
+
+	<appender name="warn" class="ch.qos.logback.core.FileAppender">
+		<file>${SERVER_LOG}/warn.log</file>
+		<append>true</append>
+		<prudent>false</prudent>
+		<encoder>
+			<pattern>${FILE_LOG_PATTERN}</pattern>
+		</encoder>
+		<filter class="ch.qos.logback.classic.filter.LevelFilter">
+			<level>WARN</level>
+			<onMatch>ACCEPT</onMatch>
+			<onMismatch>DENY</onMismatch>
+		</filter>
+	</appender>
+
+	<appender name="error" class="ch.qos.logback.core.FileAppender">
+		<file>${SERVER_LOG}/error.log</file>
+		<append>true</append>
+		<prudent>false</prudent>
+		<encoder>
+			<pattern>${FILE_LOG_PATTERN}</pattern>
+		</encoder>
+		<filter class="ch.qos.logback.classic.filter.LevelFilter">
+			<level>ERROR</level>
+			<onMatch>ACCEPT</onMatch>
+			<onMismatch>DENY</onMismatch>
+		</filter>
+	</appender>
+
+	<root level="INFO">
+		<appender-ref ref="debug" />
+		<appender-ref ref="info" />
+		<appender-ref ref="warn" />
+		<appender-ref ref="error" />
+	</root>
+</configuration>
