@@ -148,7 +148,7 @@ public enum RedisCommand {
 	 * </pre>
 	 */
 	SELECT,
-	
+
 	/**
 	 * 心跳检查包<br>
 	 * http://redis.io/commands/ping<br>
@@ -157,5 +157,16 @@ public enum RedisCommand {
 	 * 		PING
 	 * </pre>
 	 */
-	PING
+	PING,
+
+	/**
+	 * 执行同步的命令
+	 * 
+	 * http://redis.io/commands/sync<br>
+	 * 
+	 * <pre>
+	 * 		SYNC
+	 * </pre>
+	 */
+	SYNC
 }

@@ -1,14 +1,21 @@
 package com.wmz7year.synyed.module;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.wmz7year.synyed.entity.RedisServer;
-import com.wmz7year.synyed.job.SynJob;
+import com.wmz7year.synyed.net.spi.RuntimeBeanFactory;
+import com.wmz7year.synyed.worker.ProtocolSyncWorker;
 
 /**
  * 同步管道管理模块<br>
@@ -23,6 +30,23 @@ import com.wmz7year.synyed.job.SynJob;
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
 public class ProtocolManager extends BasicModule {
 	private static final Logger logger = LoggerFactory.getLogger(ProtocolManager.class);
+
+	/**
+	 * 动态创建bean的工厂类
+	 */
+	@Autowired
+	private RuntimeBeanFactory runtimeBeanFactory;
+
+	/**
+	 * 管道同步工作线程池对象
+	 */
+	private ExecutorService protocolSyncWorkerThreadPool;
+
+	/**
+	 * 管道同步工作线程池大小
+	 */
+	@Value("${server.pool.protocol.syncworker.size}")
+	private int syncWorkerSize;
 
 	/**
 	 * 源服务器地址
@@ -59,11 +83,6 @@ public class ProtocolManager extends BasicModule {
 	 */
 	@Value("${protocol.desc.auth}")
 	private String descAuth;
-	
-	/**
-	 * 同步任务对象
-	 */
-	private SynJob synJob;
 
 	/*
 	 * @see com.wmz7year.synyed.module.Module#getName()
@@ -72,23 +91,38 @@ public class ProtocolManager extends BasicModule {
 	public String getName() {
 		return "ProtocolManager";
 	}
-	
 
 	/*
 	 * @see com.wmz7year.synyed.module.BasicModule#initialize()
 	 */
 	@Override
 	public void initialize() throws Exception {
+		// 初始化同步工作线程线程池
+		logger.info("创建管道同步工作线程线程池  大小：" + syncWorkerSize);
+		protocolSyncWorkerThreadPool = Executors.newFixedThreadPool(syncWorkerSize, new ThreadFactory() {
+			private AtomicInteger counter = new AtomicInteger(0);
+
+			/*
+			 * @see
+			 * java.util.concurrent.ThreadFactory#newThread(java.lang.Runnable)
+			 */
+			@Override
+			public Thread newThread(Runnable r) {
+				Thread thread = new Thread(r);
+				thread.setName("Protocol-Sync-Worker-Thread" + counter.getAndIncrement());
+				return thread;
+			}
+		});
+
+		// TODO 以后会去掉这部分代码
+
 		RedisServer srcServer = new RedisServer(srcHost, srcPort, srcAuth);
 		RedisServer descServer = new RedisServer(descHost, descPort, descAuth);
-		logger.info("源Redis服务器：" + srcServer);
-		logger.info("目标Redis服务器：" + descServer);
-		// 创建同步任务
-		 synJob = new SynJob(srcServer, descServer);
-		Thread synJobThread = new Thread(synJob);
-		synJobThread.setName("SynJob");
-		synJobThread.setDaemon(true);
-		synJobThread.start();
+
+		ProtocolSyncWorker syncWorker = runtimeBeanFactory.createRuntimeProtocolSyncWorker();
+		syncWorker.setSrcRedis(srcServer);
+		syncWorker.setDescRedis(descServer);
+		syncWorker.start();
 	}
 
 	/*
@@ -96,8 +130,9 @@ public class ProtocolManager extends BasicModule {
 	 */
 	@Override
 	public void destroyModule() throws Exception {
-		if(synJob != null){
-			synJob.shutdown();
+		// 关闭同步工作线程线程池
+		if (protocolSyncWorkerThreadPool != null) {
+			protocolSyncWorkerThreadPool.shutdown();
 		}
 	}
 
