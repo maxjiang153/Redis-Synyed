@@ -107,7 +107,7 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 		// 向会话中绑定redis协议解析器
 		this.ioSession.setAttribute(REDIS_PROTOCOL_PARSER, new RedisProtocolParser());
 
-		logger.info("连接到Redis服务器" + address + "成功");
+		logger.info("连接到Redis服务器 " + address + " 端口 " + port + "成功");
 	}
 
 	/*
