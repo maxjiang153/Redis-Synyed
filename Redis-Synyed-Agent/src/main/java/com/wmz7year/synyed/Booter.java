@@ -4,8 +4,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.context.annotation.PropertySources;
 
 /**
  * Synyed Agent主程序启动类<br>
@@ -19,7 +17,6 @@ import org.springframework.context.annotation.PropertySources;
 @Configuration
 @ComponentScan
 @EnableAutoConfiguration
-@PropertySources({ @PropertySource(value = "classpath:dev/application.properties", ignoreResourceNotFound = true) })
 public class Booter {
 	public static void main(String[] args) {
 		SpringApplication.run(Booter.class, args);
