@@ -13,6 +13,10 @@ package com.wmz7year.synyed.constant;
  */
 public class RedisCommandSymbol {
 	/**
+	 * 空格
+	 */
+	public static final char BLANK = ' ';
+	/**
 	 * 验证身份命令
 	 */
 	public static final String AUTH = "AUTH";

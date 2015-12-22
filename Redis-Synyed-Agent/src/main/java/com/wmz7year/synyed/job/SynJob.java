@@ -1,7 +1,6 @@
 package com.wmz7year.synyed.job;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -12,9 +11,8 @@ import com.wmz7year.synyed.exception.RedisProtocolException;
 import com.wmz7year.synyed.net.RedisConnection;
 import com.wmz7year.synyed.net.RedisResponseListener;
 import com.wmz7year.synyed.net.spi.DefaultRedisConnection;
-import com.wmz7year.synyed.packet.redis.RedisDataBaseTransferPacket;
 import com.wmz7year.synyed.packet.redis.RedisPacket;
-import com.wmz7year.synyed.parser.entry.RedisDB;
+import com.wmz7year.synyed.packet.redis.command.RedisPacketCommandParser;
 
 /**
  * 同步任务类<br>
@@ -46,6 +44,10 @@ public class SynJob implements Runnable {
 	 * 目标服务器连接
 	 */
 	private RedisConnection descConnection;
+	/**
+	 * redis数据包命令解析器
+	 */
+	private RedisPacketCommandParser packetCommandParser = new RedisPacketCommandParser();
 
 	public SynJob(RedisServer srcServer, RedisServer descServer) {
 		this.srcServer = srcServer;
@@ -86,22 +88,14 @@ public class SynJob implements Runnable {
 				 */
 				@Override
 				public void receive(RedisPacket redisPacket) {
-					if (redisPacket instanceof RedisDataBaseTransferPacket) {
-						RedisDataBaseTransferPacket packet = (RedisDataBaseTransferPacket) redisPacket;
-						Collection<RedisDB> redisDBs = packet.getRedisDbs();
-						for (RedisDB redisDB : redisDBs) {
-							List<String> commands = redisDB.getCommands();
-							for (String command : commands) {
-								try {
-									logger.info("同步命令:" + command);
-									descConnection.sendCommand(command);
-								} catch (RedisProtocolException e) {
-									logger.error("发送命令到目标服务器出现问题", e);
-								}
-							}
+					List<String> commands = packetCommandParser.parseRedisPacket(redisPacket);
+					for (String command : commands) {
+						try {
+							RedisPacket responsePacket = descConnection.sendCommand(command);
+							logger.info("同步命令:" + command + " 响应结果：" + responsePacket.toString());
+						} catch (RedisProtocolException e) {
+							logger.error("发送命令到目标服务器出现问题", e);
 						}
-					} else {
-						System.out.println("redisPacket:" + redisPacket);
 					}
 				}
 			});

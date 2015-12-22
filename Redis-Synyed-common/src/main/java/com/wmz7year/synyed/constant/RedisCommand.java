@@ -137,5 +137,25 @@ public enum RedisCommand {
 	 * 		ZADD key field value
 	 * </pre>
 	 */
-	ZADD
+	ZADD,
+
+	/**
+	 * 选择数据库的命令<br>
+	 * http://redis.io/commands/SELECT<br>
+	 * 
+	 * <pre>
+	 * 		SELECT dbnum
+	 * </pre>
+	 */
+	SELECT,
+	
+	/**
+	 * 心跳检查包<br>
+	 * http://redis.io/commands/ping<br>
+	 * 
+	 * <pre>
+	 * 		PING
+	 * </pre>
+	 */
+	PING
 }
