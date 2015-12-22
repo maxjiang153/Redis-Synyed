@@ -13,17 +13,33 @@ package com.wmz7year.synyed.constant;
  */
 public class RedisCommandSymbol {
 	/**
-	 * 空格
+	 * 数组类型数据包
 	 */
-	public static final char BLANK = ' ';
+	public static final String ARRAY = "ARRAY";
 	/**
 	 * 验证身份命令
 	 */
 	public static final String AUTH = "AUTH";
 	/**
+	 * 空格
+	 */
+	public static final char BLANK = ' ';
+	/**
+	 * 复合类型的字符串
+	 */
+	public static final String BULKSTRING = "BULKSTRING";
+	/**
+	 * redis 数据传输符号
+	 */
+	public static final String DATABASETRANSFER = "DATABASETRANSFER";
+	/**
 	 * redis错误符号
 	 */
 	public static final String ERR = "ERR";
+	/**
+	 * 整数类型数据包
+	 */
+	public static final String INTEGER = "INTEGER";
 	/**
 	 * redis成功符号
 	 */
@@ -32,20 +48,5 @@ public class RedisCommandSymbol {
 	 * ping命令
 	 */
 	public static final String PING = "PING";
-	/**
-	 * redis 数据传输符号
-	 */
-	public static final String DATABASETRANSFER = "DATABASETRANSFER";
-	/**
-	 * 整数类型数据包
-	 */
-	public static final String INTEGER = "INTEGER";
-	/**
-	 * 复合类型的字符串
-	 */
-	public static final String BULKSTRING = "BULKSTRING";
-	/**
-	 * 数组类型数据包
-	 */
-	public static final String ARRAY = "ARRAY";
+
 }
