@@ -1,5 +1,7 @@
 package com.wmz7year.synyed.entity;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * redis服务器信息对象<br>
  * 封装了redis服务器的地址信息与验证信息
@@ -32,7 +34,9 @@ public class RedisServer {
 		super();
 		this.host = host;
 		this.port = port;
-		this.authPassword = authPassword;
+		if (!StringUtils.isEmpty(authPassword)) {
+			this.authPassword = authPassword;
+		}
 	}
 
 	public String getHost() {
@@ -56,7 +60,9 @@ public class RedisServer {
 	}
 
 	public void setAuthPassword(String authPassword) {
-		this.authPassword = authPassword;
+		if (!StringUtils.isEmpty(authPassword)) {
+			this.authPassword = authPassword;
+		}
 	}
 
 	/*
@@ -104,7 +110,7 @@ public class RedisServer {
 	 */
 	@Override
 	public String toString() {
-		return "RedisServer [host=" + host + ", port=" + port + ", authPassword=" + authPassword + "]";
+		return "RedisServer [host=" + host + ", port=" + port + ", useAuthPassword=" + (authPassword == null) + "]";
 	}
 
 }
