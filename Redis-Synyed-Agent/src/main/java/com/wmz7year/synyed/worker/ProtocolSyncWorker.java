@@ -5,10 +5,13 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.wmz7year.synyed.constant.RedisCommand;
 import com.wmz7year.synyed.entity.RedisServer;
+import com.wmz7year.synyed.exception.RedisCommandRejectedException;
 import com.wmz7year.synyed.exception.RedisProtocolException;
+import com.wmz7year.synyed.module.RedisCommandFilterManager;
 import com.wmz7year.synyed.net.RedisConnection;
 import com.wmz7year.synyed.net.RedisResponseListener;
 import com.wmz7year.synyed.net.spi.DefaultRedisConnection;
@@ -27,6 +30,12 @@ import com.wmz7year.synyed.packet.redis.command.RedisPacketCommandParser;
  */
 public class ProtocolSyncWorker implements RedisResponseListener {
 	private static final Logger logger = LoggerFactory.getLogger(ProtocolSyncWorker.class);
+
+	/**
+	 * Redis命令过滤处理模块
+	 */
+	@Autowired
+	private RedisCommandFilterManager redisCommandFilterManager;
 
 	/**
 	 * redis源服务器
@@ -164,7 +173,29 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 		// 解析出命令列表
 		List<String> commands = packetCommandParser.parseRedisPacket(redisPacket);
 		for (String command : commands) {
-			// TODO filter
+			// 处理解析出的命令
+			processCommand(command);
+		}
+	}
+
+	/**
+	 * 处理需要执行的同步命令的方法<br>
+	 * 首先经过拦截器进行命令过滤操作<br>
+	 * 其次命令持久化到磁盘作为记录备份<br>
+	 * 最后发送到目标服务器并且校验响应结果
+	 * 
+	 * @param command
+	 *            需要处理的命令
+	 */
+	private void processCommand(String command) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("开始处理同步命令：" + command);
+		}
+
+		try {
+			// 在命令发送前进行过滤操作
+			redisCommandFilterManager.beforeSendCommand(command, srcServer, descServer);
+
 			// TODO 写入到文件
 			try {
 				RedisPacket responsePacket = descConnection.sendCommand(command);
@@ -174,7 +205,11 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 			} catch (RedisProtocolException e) {
 				logger.error("发送命令到目标服务器出现问题", e);
 			}
-			// TODO 校验响应结果
+			// 在命令发送后进行过滤操作
+			redisCommandFilterManager.afterSendCommand(command, srcServer, descServer);
+		} catch (RedisCommandRejectedException e) {
+			logger.info("命令：" + command + " 被拦截器拦截");
 		}
+		// TODO 校验响应结果
 	}
 }
