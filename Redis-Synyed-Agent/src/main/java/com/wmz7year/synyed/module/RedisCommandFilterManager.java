@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import com.wmz7year.synyed.command.filter.RedisCommandInterceptor;
 import com.wmz7year.synyed.entity.RedisServer;
 import com.wmz7year.synyed.exception.RedisCommandRejectedException;
+import com.wmz7year.synyed.packet.redis.RedisPacket;
 
 /**
  * Redis命令拦截管理模块对象<br>
@@ -97,6 +98,8 @@ public class RedisCommandFilterManager extends BasicModule {
 	 * 
 	 * @param command
 	 *            需要过滤的命令
+	 * @param responsePacket
+	 *            执行命令后的响应数据包对象
 	 * @param srcServer
 	 *            命令产生的源服务器
 	 * @param descServer
@@ -104,13 +107,13 @@ public class RedisCommandFilterManager extends BasicModule {
 	 * @throws RedisCommandRejectedException
 	 *             当出现问题时中断处理链
 	 */
-	public void afterSendCommand(String command, RedisServer srcServer, RedisServer descServer)
-			throws RedisCommandRejectedException {
+	public void afterSendCommand(String command, RedisPacket responsePacket, RedisServer srcServer,
+			RedisServer descServer) throws RedisCommandRejectedException {
 		Iterator<RedisCommandInterceptor> iterator = interceptors.iterator();
 		while (iterator.hasNext()) {
 			RedisCommandInterceptor commandInterceptor = iterator.next();
 			try {
-				commandInterceptor.afterSendCommand(command, srcServer, descServer);
+				commandInterceptor.afterSendCommand(command, responsePacket, srcServer, descServer);
 			} catch (RedisCommandRejectedException e) {
 				logger.info("命令：" + command + "在发送后被拦截器:" + commandInterceptor.getName() + "拦截");
 				throw e;

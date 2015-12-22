@@ -2,6 +2,7 @@ package com.wmz7year.synyed.command.filter;
 
 import com.wmz7year.synyed.entity.RedisServer;
 import com.wmz7year.synyed.exception.RedisCommandRejectedException;
+import com.wmz7year.synyed.packet.redis.RedisPacket;
 
 /**
  * Redis命令拦截过滤器<br>
@@ -39,6 +40,8 @@ public interface RedisCommandInterceptor {
 	 * 
 	 * @param command
 	 *            需要过滤的命令
+	 * @param responsePacket
+	 *            执行命令后的响应数据包对象
 	 * @param srcServer
 	 *            命令产生的源服务器
 	 * @param descServer
@@ -46,8 +49,8 @@ public interface RedisCommandInterceptor {
 	 * @throws RedisCommandRejectedException
 	 *             当出现问题时中断处理链
 	 */
-	public void afterSendCommand(String command, RedisServer srcServer, RedisServer descServer)
-			throws RedisCommandRejectedException;
+	public void afterSendCommand(String command, RedisPacket responsePacket, RedisServer srcServer,
+			RedisServer descServer) throws RedisCommandRejectedException;
 
 	/**
 	 * 获取拦截器名称的方法

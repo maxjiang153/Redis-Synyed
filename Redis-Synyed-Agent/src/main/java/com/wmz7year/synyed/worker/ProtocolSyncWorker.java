@@ -112,6 +112,7 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 	 * 发送SYNC命令到源服务器
 	 */
 	private void startSyncSourceRedisServer() {
+		// TODO PSYNC
 		try {
 			srcConnection.sendCommand(String.valueOf(RedisCommand.SYNC), this);
 		} catch (RedisProtocolException e) {
@@ -197,19 +198,50 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 			redisCommandFilterManager.beforeSendCommand(command, srcServer, descServer);
 
 			// TODO 写入到文件
-			try {
-				RedisPacket responsePacket = descConnection.sendCommand(command);
-				if (logger.isDebugEnabled()) {
-					logger.debug("同步命令:" + command + " 响应结果：" + responsePacket.toString());
-				}
-			} catch (RedisProtocolException e) {
-				logger.error("发送命令到目标服务器出现问题", e);
-			}
+
+			// 发送命令到目标服务器
+			RedisPacket responsePacket = sendCommandToTargetServer(command);
+			// 处理响应
+			processResponsePacket(responsePacket);
+
 			// 在命令发送后进行过滤操作
-			redisCommandFilterManager.afterSendCommand(command, srcServer, descServer);
+			redisCommandFilterManager.afterSendCommand(command, responsePacket, srcServer, descServer);
 		} catch (RedisCommandRejectedException e) {
 			logger.info("命令：" + command + " 被拦截器拦截");
+		} catch (RedisProtocolException e) {
+			logger.error("发送命令到目标服务器出现问题", e);
 		}
-		// TODO 校验响应结果
+	}
+
+	/**
+	 * 发送同步命令到目标服务器的方法
+	 * 
+	 * @param command
+	 *            需要发送的同步命令
+	 * @return 发送命令的响应结果
+	 * @throws RedisProtocolException
+	 *             当发送命令出现问题则抛出该异常
+	 */
+	private RedisPacket sendCommandToTargetServer(String command) throws RedisProtocolException {
+		try {
+			RedisPacket responsePacket = descConnection.sendCommand(command);
+			if (logger.isDebugEnabled()) {
+				logger.debug("同步命令:" + command + " 响应结果：" + responsePacket.toString());
+			}
+			return responsePacket;
+		} catch (RedisProtocolException e) {
+			logger.error("发送命令到目标服务器出现问题", e);
+			throw e;
+		}
+	}
+
+	/**
+	 * 处理执行同步命令响应结果的方法
+	 * 
+	 * @param responsePacket
+	 *            响应数据包对象
+	 */
+	private void processResponsePacket(RedisPacket responsePacket) {
+		System.err.println("responsePacket:" + responsePacket);
 	}
 }
