@@ -99,14 +99,8 @@ public class RedisPacketCommandParser {
 		} else {
 			List<RedisPacket> packets = packet.getPackets();
 			RedisCommand redisCommand = new RedisCommand(packets.get(0).getCommand());
-			boolean isKeySeted = false;
 			for (int i = 1; i < packets.size(); i++) {
-				if (!isKeySeted) {
-					redisCommand.setKey(packets.get(i).getData());
-					isKeySeted = true;
-				} else {
-					redisCommand.addValue(packets.get(i).getData());
-				}
+				redisCommand.addValue(packets.get(i).getData());
 			}
 			result.add(redisCommand);
 		}
@@ -127,7 +121,7 @@ public class RedisPacketCommandParser {
 		for (RedisDB redisDB : redisDBs) {
 			// 添加选择数据库命令
 			RedisCommand selectDBCommand = new RedisCommand(SELECT);
-			selectDBCommand.setKey(String.valueOf(redisDB.getNum()));
+			selectDBCommand.addValue(String.valueOf(redisDB.getNum()));
 			result.add(selectDBCommand);
 
 			// 添加rdb中解析出的命令列表

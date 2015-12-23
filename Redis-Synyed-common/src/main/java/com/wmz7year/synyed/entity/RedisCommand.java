@@ -1,6 +1,7 @@
 package com.wmz7year.synyed.entity;
 
-import com.wmz7year.synyed.constant.RedisCommandSymbol;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Redis命令对象<br>
@@ -18,89 +19,49 @@ public class RedisCommand {
 	 */
 	private String command;
 	/**
-	 * key
-	 */
-	private byte[] key;
-	/**
 	 * value
 	 */
-	private byte[] value;
+	private List<RedisCommandData> values = new ArrayList<RedisCommandData>();
 
 	public RedisCommand(String command) {
 		this.command = command;
 	}
 
-	public RedisCommand(String command, byte[] key) {
-		this.command = command;
-		this.key = key;
-	}
-
-	/**
-	 * 设置key的方法
-	 * 
-	 * @param key
-	 *            需要设置的字符串类型的key
-	 */
-	public void setKey(String key) {
-		setKey(key.getBytes());
-	}
-
-	/**
-	 * 需要设置的key
-	 * 
-	 * @param key
-	 *            需要设置的key
-	 */
-	public void setKey(byte[] key) {
-		this.key = key;
-	}
-
 	/**
 	 * 添加值的方法<br>
-	 * 第一次添加值直接设置<br>
-	 * 接下来添加值的时候先添加一个空格 再添加值
 	 * 
 	 * @param value
 	 *            需要添加的值
 	 */
 	public void addValue(byte[] value) {
-		if (this.value == null) {
-			this.value = value;
-		} else {
-			int length = this.value.length + value.length + 1;
-			byte[] newValue = new byte[length];
-			System.arraycopy(this.value, 0, newValue, 0, this.value.length);
-			newValue[this.value.length] = RedisCommandSymbol.BLANK;
-			System.arraycopy(value, 0, newValue, this.value.length + 1, value.length);
-			this.value = newValue;
-		}
+		this.values.add(new RedisCommandData(value));
+	}
+
+	public void addValue(String value) {
+		addValue(value.getBytes());
 	}
 
 	/**
-	 * 命令对象转换为byte数组的方法
+	 * 获取命令所占的空间大小的方法<br>
+	 * 空间大小为命令+key+values的长度
 	 * 
-	 * @return
+	 * @return 所占的空间大小
 	 */
-	public byte[] getBytes() {
-		byte[] commandData = this.command.getBytes();
-		int length = commandData.length;
-		if (key != null) {
-			length += key.length + 1;
-		}
-		if (value != null) {
-			length += value.length + 1;
-		}
-		byte[] result = new byte[length];
-		System.arraycopy(commandData, 0, result, 0, commandData.length);
-		if (key != null) {
-			result[commandData.length] = RedisCommandSymbol.BLANK;
-			System.arraycopy(key, 0, result, commandData.length + 1, key.length);
-		}
-		if (value != null) {
-			result[commandData.length + key.length + 1] = RedisCommandSymbol.BLANK;
-			System.arraycopy(value, 0, result, commandData.length + key.length + 2, value.length);
+	public int getSize() {
+		int result = 0;
+		result += command.length();
+		for (RedisCommandData value : values) {
+			result += value.getData().length;
 		}
 		return result;
+	}
+
+	public String getCommand() {
+		return this.command;
+	}
+
+	public List<RedisCommandData> getValues() {
+		return this.values;
 	}
 
 	/*
@@ -108,8 +69,7 @@ public class RedisCommand {
 	 */
 	@Override
 	public String toString() {
-		return "RedisCommand [command=" + command + ", key=" + (key != null ? new String(key) : "null") + ", value="
-				+ (value != null ? new String(value) : "null") + "]";
+		return "RedisCommand [command=" + command + ",values=" + values + "]";
 	}
 
 }

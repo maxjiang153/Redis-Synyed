@@ -203,7 +203,9 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 
 		// 如果密码不为空则执行登录操作
 		if (password != null) {
-			RedisPacket response = sendCommand(new RedisCommand(AUTH, this.password.getBytes()));
+			RedisCommand authCommand = new RedisCommand(AUTH);
+			authCommand.addValue(this.password);
+			RedisPacket response = sendCommand(authCommand);
 			if (response.getCommand().equals(OK)) {
 				return true;
 			} else if (response.getCommand().equals(ERR)) {

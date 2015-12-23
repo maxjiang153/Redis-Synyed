@@ -89,7 +89,7 @@ public class RedisRDBCommand {
 	 */
 	private RedisCommand createSETCommand() {
 		RedisCommand result = new RedisCommand(SET);
-		result.setKey(key.getBuffer());
+		result.addValue(key.getBuffer());
 		result.addValue(value.getBuffer());
 		return result;
 	}
@@ -103,7 +103,7 @@ public class RedisRDBCommand {
 	 */
 	private RedisCommand createLPUSHCommand() {
 		RedisCommand result = new RedisCommand(LPUSH);
-		result.setKey(key.getBuffer());
+		result.addValue(key.getBuffer());
 		result.addValue(value.getBuffer());
 		return result;
 	}
@@ -121,7 +121,7 @@ public class RedisRDBCommand {
 		List<byte[]> elements = hashZipList.getElements();
 		for (int i = 0; i < hashZipList.getElementCount(); i += 2) {
 			RedisCommand result = new RedisCommand(HSET);
-			result.setKey(key.getBuffer());
+			result.addValue(key.getBuffer());
 			result.addValue(elements.get(i));
 			result.addValue(elements.get(i + 1));
 			commands.add(result);
@@ -138,7 +138,7 @@ public class RedisRDBCommand {
 	 */
 	private RedisCommand createZADDCommand() {
 		RedisCommand result = new RedisCommand(ZADD);
-		result.setKey(key.getBuffer());
+		result.addValue(key.getBuffer());
 		result.addValue(value.getBuffer());
 		return result;
 	}
