@@ -204,6 +204,9 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 			RedisPacket responsePacket = sendCommandToTargetServer(command);
 			// 处理响应
 			boolean result = processResponsePacket(responsePacket);
+			if (logger.isDebugEnabled()) {
+				logger.debug("同步命令:" + command + (result ? " 成功" : " 失败"));
+			}
 
 			// 在命令发送后进行过滤操作
 			redisCommandFilterManager.afterSendCommand(command, result, srcServer, descServer);
