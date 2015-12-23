@@ -3,6 +3,8 @@ package com.wmz7year.synyed.parser.entry;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.wmz7year.synyed.entity.RedisCommand;
+
 /**
  * 封装Redis 数据库信息的实体类<br>
  * 
@@ -20,7 +22,7 @@ public class RedisDB {
 	/**
 	 * rdb中的命令列表
 	 */
-	private List<String> command = new ArrayList<String>();
+	private List<RedisCommand> command = new ArrayList<RedisCommand>();
 
 	public RedisDB(int num) {
 		this.num = num;
@@ -50,7 +52,7 @@ public class RedisDB {
 	 * 
 	 * @return redis命令列表集合
 	 */
-	public List<String> getCommands() {
+	public List<RedisCommand> getCommands() {
 		return this.command;
 	}
 

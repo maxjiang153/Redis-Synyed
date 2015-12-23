@@ -22,6 +22,7 @@ import org.apache.mina.transport.socket.nio.NioSocketConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.wmz7year.synyed.entity.RedisCommand;
 import com.wmz7year.synyed.exception.RedisProtocolException;
 import com.wmz7year.synyed.net.RedisResponseListener;
 import com.wmz7year.synyed.net.RedisConnection;
@@ -129,7 +130,7 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 	@Override
 	public void sessionIdle(IoSession session, IdleStatus status) throws Exception {
 		// 发送ping命令
-		sendCommand(PING);
+		sendCommand(new RedisCommand(PING));
 	}
 
 	/*
@@ -202,7 +203,7 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 
 		// 如果密码不为空则执行登录操作
 		if (password != null) {
-			RedisPacket response = sendCommand(AUTH, this.password);
+			RedisPacket response = sendCommand(new RedisCommand(AUTH, this.password.getBytes()));
 			if (response.getCommand().equals(OK)) {
 				return true;
 			} else if (response.getCommand().equals(ERR)) {
@@ -243,7 +244,7 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 	 * java.lang.String[])
 	 */
 	@Override
-	public RedisPacket sendCommand(String command, String... args) throws RedisProtocolException {
+	public RedisPacket sendCommand(RedisCommand command) throws RedisProtocolException {
 		if (!isConnected()) {
 			throw new RedisProtocolException("未连接到服务器");
 		}
@@ -255,7 +256,7 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 			// 清空上次响应
 			response = null;
 			// 发送命令到redis服务器
-			this.ioSession.write(buildRequestCommand(command, args));
+			this.ioSession.write(command);
 			// 等待响应
 			long start = System.currentTimeMillis();
 			while (response == null) {
@@ -282,12 +283,11 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 
 	/*
 	 * @see
-	 * com.wmz7year.synyed.net.RedisConnection#sendCommand(java.lang.String,
-	 * com.wmz7year.synyed.net.RedisCommandResponseListener, java.lang.String[])
+	 * com.wmz7year.synyed.net.RedisConnection#sendCommand(com.wmz7year.synyed.
+	 * entity.RedisCommand, com.wmz7year.synyed.net.RedisResponseListener)
 	 */
 	@Override
-	public void sendCommand(String command, RedisResponseListener listener, String... params)
-			throws RedisProtocolException {
+	public void sendCommand(RedisCommand command, RedisResponseListener listener) throws RedisProtocolException {
 		if (!isConnected()) {
 			throw new RedisProtocolException("未连接到服务器");
 		}
@@ -297,7 +297,7 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 		// 清空上次响应
 		response = null;
 		// 发送命令到redis服务器
-		this.ioSession.write(buildRequestCommand(command, params));
+		this.ioSession.write(command);
 	}
 
 	/*
@@ -311,25 +311,6 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 		} else {
 			logger.warn("不匹配的监听器对象：" + listener);
 		}
-	}
-
-	/**
-	 * 把命令与附带的参数合并为一个完整请求命令的方法
-	 * 
-	 * @param command
-	 *            redis命令
-	 * @param args
-	 *            请求参数列表
-	 * @return 完整的请求命令
-	 */
-	private String buildRequestCommand(String command, String... args) {
-		StringBuilder sb = new StringBuilder();
-		sb.append(command).append(' ');
-		for (String arg : args) {
-			sb.append(arg).append(' ');
-		}
-		String result = sb.substring(0, sb.length() - 1);
-		return result;
 	}
 
 	/*

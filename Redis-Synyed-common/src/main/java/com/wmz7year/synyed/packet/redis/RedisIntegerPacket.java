@@ -14,9 +14,14 @@ public class RedisIntegerPacket extends RedisPacket {
 	 * 数据对应的值
 	 */
 	private long num;
+	/**
+	 * 数据内容
+	 */
+	private byte[] data;
 
-	public RedisIntegerPacket(String command) {
+	public RedisIntegerPacket(String command, byte[] data) {
 		super(command);
+		this.data = data;
 	}
 
 	public void setNum(long num) {
@@ -33,6 +38,14 @@ public class RedisIntegerPacket extends RedisPacket {
 	@Override
 	public String toString() {
 		return "RedisIntegerPacket [num=" + num + "]";
+	}
+
+	/*
+	 * @see com.wmz7year.synyed.packet.redis.RedisPacket#getData()
+	 */
+	@Override
+	public byte[] getData() {
+		return data;
 	}
 
 }

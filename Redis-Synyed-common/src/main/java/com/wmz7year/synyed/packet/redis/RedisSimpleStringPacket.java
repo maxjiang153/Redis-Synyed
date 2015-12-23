@@ -11,9 +11,22 @@ package com.wmz7year.synyed.packet.redis;
  * @version V1.0
  */
 public class RedisSimpleStringPacket extends RedisPacket {
+	/**
+	 * 数据内容
+	 */
+	private byte[] data;
 
-	public RedisSimpleStringPacket(String command) {
+	public RedisSimpleStringPacket(String command, byte[] data) {
 		super(command);
+		this.data = data;
+	}
+
+	/*
+	 * @see com.wmz7year.synyed.packet.redis.RedisPacket#getData()
+	 */
+	@Override
+	public byte[] getData() {
+		return data;
 	}
 
 	/*

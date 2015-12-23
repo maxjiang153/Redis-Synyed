@@ -2,6 +2,7 @@ package com.wmz7year.synyed.net;
 
 import java.io.Closeable;
 
+import com.wmz7year.synyed.entity.RedisCommand;
 import com.wmz7year.synyed.exception.RedisProtocolException;
 import com.wmz7year.synyed.packet.redis.RedisPacket;
 
@@ -61,14 +62,12 @@ public interface RedisConnection extends Closeable {
 	 * 超时时间为默认连接超时时间
 	 * 
 	 * @param command
-	 *            需要执行的redis命令
-	 * @param params
-	 *            参数列表
+	 *            需要执行的redis命令对象
 	 * @return redis响应包
 	 * @throws RedisProtocolException
 	 *             当发生错误时抛出该异常
 	 */
-	public RedisPacket sendCommand(String command, String... params) throws RedisProtocolException;
+	public RedisPacket sendCommand(RedisCommand command) throws RedisProtocolException;
 
 	/**
 	 * 发送Redis命令的方法<br>
@@ -78,16 +77,13 @@ public interface RedisConnection extends Closeable {
 	 * 直到调用cancalResponseListener后会恢复该连接的正常状态
 	 * 
 	 * @param command
-	 *            需要执行的redis命令
+	 *            需要执行的redis命令对象
 	 * @param listener
 	 *            响应内容监听器
-	 * @param params
-	 *            请求的参数列表
 	 * @throws RedisProtocolException
 	 *             当发生错误时抛出该异常
 	 */
-	public void sendCommand(String command, RedisResponseListener listener, String... params)
-			throws RedisProtocolException;
+	public void sendCommand(RedisCommand command, RedisResponseListener listener) throws RedisProtocolException;
 
 	/**
 	 * 移除响应监听器的方法

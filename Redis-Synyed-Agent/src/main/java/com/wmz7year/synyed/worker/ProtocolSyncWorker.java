@@ -9,7 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.wmz7year.synyed.constant.RedisCommand;
+import com.wmz7year.synyed.constant.RedisCommandSymbol;
+import com.wmz7year.synyed.entity.RedisCommand;
 import com.wmz7year.synyed.entity.RedisServer;
 import com.wmz7year.synyed.exception.RedisCommandRejectedException;
 import com.wmz7year.synyed.exception.RedisProtocolException;
@@ -118,7 +119,7 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 	private void startSyncSourceRedisServer() {
 		// TODO PSYNC
 		try {
-			srcConnection.sendCommand(String.valueOf(RedisCommand.SYNC), this);
+			srcConnection.sendCommand(new RedisCommand(RedisCommandSymbol.SYNC), this);
 		} catch (RedisProtocolException e) {
 			logger.error("发送同步命令失败", e);
 		}
@@ -176,8 +177,8 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 	@Override
 	public void receive(RedisPacket redisPacket) {
 		// 解析出命令列表
-		List<String> commands = packetCommandParser.parseRedisPacket(redisPacket);
-		for (String command : commands) {
+		List<RedisCommand> commands = packetCommandParser.parseRedisPacket(redisPacket);
+		for (RedisCommand command : commands) {
 			// 处理解析出的命令
 			processCommand(command);
 		}
@@ -192,7 +193,7 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 	 * @param command
 	 *            需要处理的命令
 	 */
-	private void processCommand(String command) {
+	private void processCommand(RedisCommand command) {
 		if (logger.isDebugEnabled()) {
 			logger.debug("开始处理同步命令：" + command);
 		}
@@ -227,7 +228,7 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 	 * @throws RedisProtocolException
 	 *             当发送命令出现问题则抛出该异常
 	 */
-	private RedisPacket sendCommandToTargetServer(String command) throws RedisProtocolException {
+	private RedisPacket sendCommandToTargetServer(RedisCommand command) throws RedisProtocolException {
 		try {
 			RedisPacket responsePacket = descConnection.sendCommand(command);
 			if (logger.isDebugEnabled()) {

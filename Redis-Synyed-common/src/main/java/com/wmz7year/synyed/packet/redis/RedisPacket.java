@@ -27,4 +27,11 @@ public abstract class RedisPacket {
 	public void setCommand(String command) {
 		this.command = command;
 	}
+
+	/**
+	 * 获取数据包原始数据的方法
+	 * 
+	 * @return 数据包原始数据
+	 */
+	public abstract byte[] getData();
 }

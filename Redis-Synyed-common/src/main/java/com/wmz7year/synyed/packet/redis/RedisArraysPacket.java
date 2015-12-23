@@ -54,4 +54,12 @@ public class RedisArraysPacket extends RedisPacket {
 		return "RedisArraysPacket [arrayLength=" + arrayLength + ", packets=" + packets + "]";
 	}
 
+	/*
+	 * @see com.wmz7year.synyed.packet.redis.RedisPacket#getData()
+	 */
+	@Override
+	public byte[] getData() {
+		throw new UnsupportedOperationException();
+	}
+
 }

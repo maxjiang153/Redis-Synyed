@@ -2,10 +2,7 @@ package com.wmz7year.synyed.parser.entry;
 
 import static com.wmz7year.synyed.constant.RedisRDBConstant.REDIS_ENCODING_ZIPLIST;
 import static com.wmz7year.synyed.constant.RedisRDBConstant.REDIS_ZSET;
-import static com.wmz7year.synyed.util.NumberUtil.byte216bitInt;
-import static com.wmz7year.synyed.util.NumberUtil.byte224bitInt;
 import static com.wmz7year.synyed.util.NumberUtil.byte2Int;
-import static com.wmz7year.synyed.util.NumberUtil.byte2Long;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
@@ -39,7 +36,7 @@ public class RedisHashZipList extends RedisObject {
 	/**
 	 * ziplist解析出的元素
 	 */
-	private List<String> elements = new ArrayList<String>();
+	private List<byte[]> elements = new ArrayList<byte[]>();
 	/**
 	 * 当前元素读取的字节数
 	 */
@@ -141,7 +138,7 @@ public class RedisHashZipList extends RedisObject {
 			// 读取符号
 			byte entrySpecialFlag = readEntrySpecialFlag();
 			// 读取元素长度
-			String entry = readEntry(entrySpecialFlag);
+			byte[] entry = readEntry(entrySpecialFlag);
 			elements.add(entry);
 		}
 	}
@@ -173,7 +170,7 @@ public class RedisHashZipList extends RedisObject {
 	 * @throws RedisRDBException
 	 *             读取发生错误时抛出该异常
 	 */
-	private String readEntry(byte readEntrySpecialFlag) throws RedisRDBException {
+	private byte[] readEntry(byte readEntrySpecialFlag) throws RedisRDBException {
 		byte bit7 = (byte) ((readEntrySpecialFlag >> 7) & 0x1);
 		byte bit6 = (byte) ((readEntrySpecialFlag >> 6) & 0x1);
 		byte bit5 = (byte) ((readEntrySpecialFlag >> 5) & 0x1);
@@ -190,7 +187,7 @@ public class RedisHashZipList extends RedisObject {
 				throw new RedisRDBException("解析错误");
 			}
 			elementReadLength += length;
-			return new String(buffer);
+			return buffer;
 		} else if (bit7 == 0 && bit6 == 1) { // 2bytes 14bit字符串
 			int length = ((((bit3 << 3) + (bit2 << 2) + (bit1 << 1) + (bit0 << 0) - 1)) << 8) | readByte() & 0xFF;
 			elementReadLength++;
@@ -199,7 +196,7 @@ public class RedisHashZipList extends RedisObject {
 				throw new RedisRDBException("解析错误");
 			}
 			elementReadLength += length;
-			return new String(buffer);
+			return buffer;
 		} else if (bit7 == 1 && bit6 == 0) { // 5bytes 字符串长度大于16384
 			byte[] buffer = new byte[4];
 			if (!readBytes(buffer, 0, 4)) {
@@ -211,31 +208,28 @@ public class RedisHashZipList extends RedisObject {
 			if (!readBytes(buffer, 0, len)) {
 				throw new RedisRDBException("解析错误");
 			}
-			return new String(buffer);
+			return buffer;
 		} else if (bit7 == 1 && bit6 == 1 && bit5 == 0 && bit4 == 0) { // 16bit整数
 			byte[] buffer = new byte[2];
 			if (!readBytes(buffer, 0, 2)) {
 				throw new RedisRDBException("解析错误");
 			}
 			elementReadLength += 2;
-			int result = byte216bitInt(buffer);
-			return String.valueOf(result);
+			return buffer;
 		} else if (bit7 == 1 && bit6 == 1 && bit5 == 0 && bit4 == 1) { // 32bit整数
 			byte[] buffer = new byte[4];
 			if (!readBytes(buffer, 0, 4)) {
 				throw new RedisRDBException("解析错误");
 			}
 			elementReadLength += 4;
-			int result = byte2Int(buffer);
-			return String.valueOf(result);
+			return buffer;
 		} else if (bit7 == 1 && bit6 == 1 && bit5 == 1 && bit4 == 0) { // 64bit整数
 			byte[] buffer = new byte[8];
 			if (!readBytes(buffer, 0, 8)) {
 				throw new RedisRDBException("解析错误");
 			}
 			elementReadLength += 8;
-			long result = byte2Long(buffer);
-			return String.valueOf(result);
+			return buffer;
 		} else if (bit7 == 1 && bit6 == 1 && bit5 == 1 && bit4 == 1 && bit3 == 0 && bit2 == 0 && bit1 == 0
 				&& bit0 == 0) { // 24bit整数
 			byte[] buffer = new byte[3];
@@ -243,16 +237,15 @@ public class RedisHashZipList extends RedisObject {
 				throw new RedisRDBException("解析错误");
 			}
 			elementReadLength += 3;
-			int result = byte224bitInt(buffer);
-			return String.valueOf(result);
+			return buffer;
 		} else if (bit7 == 1 && bit6 == 1 && bit5 == 1 && bit4 == 1 && bit3 == 1 && bit2 == 1 && bit1 == 1
 				&& bit0 == 0) { // 8bit整数
 			byte result = readByte();
 			elementReadLength++;
-			return String.valueOf(result);
+			return new byte[] { result };
 		} else if (bit7 == 1 && bit6 == 1 && bit5 == 1 && bit4 == 1) { // 4bit整数数据
 			byte result = (byte) ((bit3 << 3) + (bit2 << 2) + (bit1 << 1) + (bit0 << 0) - 1);
-			return String.valueOf(result);
+			return new byte[] { result };
 		} else {
 			throw new RedisRDBException("不支持的entry special符号");
 		}
@@ -345,8 +338,8 @@ public class RedisHashZipList extends RedisObject {
 	@Override
 	public String toCommand() {
 		StringBuilder result = new StringBuilder();
-		for (String element : elements) {
-			result.append(element).append(' ');
+		for (byte[] element : elements) {
+			result.append(new String(element)).append(' ');
 		}
 		if (result.length() > 0 && result.charAt(result.length() - 1) == ' ') {
 			return result.substring(0, result.length() - 1);
@@ -376,7 +369,7 @@ public class RedisHashZipList extends RedisObject {
 	 * 
 	 * @return 元素列表集合
 	 */
-	public List<String> getElements() {
+	public List<byte[]> getElements() {
 		return this.elements;
 	}
 

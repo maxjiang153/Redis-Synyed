@@ -3,12 +3,12 @@ package com.wmz7year.synyed.net;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.wmz7year.synyed.Booter;
+import com.wmz7year.synyed.constant.RedisCommandSymbol;
+import com.wmz7year.synyed.entity.RedisCommand;
 import com.wmz7year.synyed.net.spi.DefaultRedisConnection;
 import com.wmz7year.synyed.packet.redis.RedisPacket;
 
@@ -24,7 +24,6 @@ import com.wmz7year.synyed.packet.redis.RedisPacket;
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = Booter.class)
 public class RedisConnectionTest {
-	private static final Logger logger = LoggerFactory.getLogger(RedisConnectionTest.class);
 
 	/**
 	 * redis地址
@@ -69,8 +68,8 @@ public class RedisConnectionTest {
 	@Test
 	public void testSendCommandToRedis() throws Exception {
 		RedisConnection connection = new DefaultRedisConnection();
-		connection.connect(host, port, 5000);
-		RedisPacket response = connection.sendCommand("PING");
+		connection.connect(host, port, password, 5000);
+		RedisPacket response = connection.sendCommand(new RedisCommand(RedisCommandSymbol.PING));
 		assertEquals(response.getCommand(), "PONG");
 		connection.close();
 	}
@@ -93,7 +92,7 @@ public class RedisConnectionTest {
 		};
 		RedisConnection connection = new DefaultRedisConnection();
 		connection.connect(host, port, password, 5000);
-		connection.sendCommand("PING", listener);
+		connection.sendCommand(new RedisCommand(RedisCommandSymbol.PING), listener);
 		connection.close();
 	}
 }

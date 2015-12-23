@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.wmz7year.synyed.command.filter.RedisCommandInterceptor;
+import com.wmz7year.synyed.entity.RedisCommand;
 import com.wmz7year.synyed.entity.RedisServer;
 import com.wmz7year.synyed.exception.RedisCommandRejectedException;
 
@@ -76,7 +77,7 @@ public class RedisCommandFilterManager extends BasicModule {
 	 * @throws RedisCommandRejectedException
 	 *             当出现问题时中断同步该命令以及处理链
 	 */
-	public void beforeSendCommand(String command, RedisServer srcServer, RedisServer descServer)
+	public void beforeSendCommand(RedisCommand command, RedisServer srcServer, RedisServer descServer)
 			throws RedisCommandRejectedException {
 		Iterator<RedisCommandInterceptor> iterator = interceptors.iterator();
 		while (iterator.hasNext()) {
@@ -106,7 +107,7 @@ public class RedisCommandFilterManager extends BasicModule {
 	 * @throws RedisCommandRejectedException
 	 *             当出现问题时中断处理链
 	 */
-	public void afterSendCommand(String command, boolean result, RedisServer srcServer, RedisServer descServer)
+	public void afterSendCommand(RedisCommand command, boolean result, RedisServer srcServer, RedisServer descServer)
 			throws RedisCommandRejectedException {
 		Iterator<RedisCommandInterceptor> iterator = interceptors.iterator();
 		while (iterator.hasNext()) {

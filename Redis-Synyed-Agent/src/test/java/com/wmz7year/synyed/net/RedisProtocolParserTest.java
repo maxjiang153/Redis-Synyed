@@ -288,15 +288,8 @@ public class RedisProtocolParserTest {
 	 */
 	@Test
 	public void testDatabaseTransferPacket() throws Exception {
-		String str = "helloworld";
-		StringBuilder redisData = new StringBuilder();
-		redisData.append('$');
-		redisData.append(str.length() + 9);
-		redisData.append(CRLF);
-		redisData.append("REDIS0006");
-		redisData.append(str);
-
-		byte[] data = redisData.toString().getBytes();
+		byte[] data = { 36, 51, 49, 13, 10, 82, 69, 68, 73, 83, 48, 48, 48, 54, -2, 0, 0, 5, 109, 121, 107, 101, 121, 3,
+				0, -1, -16, -1, -1, -100, -79, 119, 2, -41, -36, -30 };
 		ByteBuffer buf = ByteBuffer.allocate(data.length);
 		buf.put(data).flip();
 
@@ -337,7 +330,7 @@ public class RedisProtocolParserTest {
 		assertEquals(packet.getCommand(), RedisCommandSymbol.BULKSTRING);
 		assertTrue(packet instanceof RedisBulkStringPacket);
 		RedisBulkStringPacket bulkPacket = (RedisBulkStringPacket) packet;
-		assertEquals(str, bulkPacket.getData());
+		assertEquals(str, new String(bulkPacket.getData()));
 	}
 
 	/**
@@ -369,7 +362,7 @@ public class RedisProtocolParserTest {
 		assertEquals(packet.getCommand(), RedisCommandSymbol.BULKSTRING);
 		assertTrue(packet instanceof RedisBulkStringPacket);
 		RedisBulkStringPacket bulkPacket = (RedisBulkStringPacket) packet;
-		assertEquals(str, bulkPacket.getData());
+		assertEquals(str, new String(bulkPacket.getData()));
 	}
 
 	/**
@@ -398,7 +391,7 @@ public class RedisProtocolParserTest {
 		assertEquals(packet.getCommand(), RedisCommandSymbol.BULKSTRING);
 		assertTrue(packet instanceof RedisBulkStringPacket);
 		RedisBulkStringPacket bulkPacket = (RedisBulkStringPacket) packet;
-		assertEquals(str, bulkPacket.getData());
+		assertEquals(str, new String(bulkPacket.getData()));
 	}
 
 	/**
@@ -591,15 +584,9 @@ public class RedisProtocolParserTest {
 	 */
 	@Test
 	public void testSubDatabaseTransferPacket() throws Exception {
-		String str = "he";
-		StringBuilder redisData = new StringBuilder();
-		redisData.append('$');
-		redisData.append(str.length() + 9);
-		redisData.append(CRLF);
-		redisData.append("REDIS0006");
-		redisData.append(str);
+		byte[] data = { 36, 51, 49, 13, 10, 82, 69, 68, 73, 83, 48, 48, 48, 54, -2, 0, 0, 5, 109, 121, 107, 101, 121, 3,
+				0, -1, -16, -1, -1, -100, -79, 119, 2, -41, -36, -30 };
 
-		byte[] data = redisData.toString().getBytes();
 		for (int i = 0; i < data.length; i++) {
 			ByteBuffer buf = ByteBuffer.allocate(1);
 			buf.put(data[i]).flip();
@@ -644,7 +631,7 @@ public class RedisProtocolParserTest {
 		assertEquals(packet.getCommand(), RedisCommandSymbol.BULKSTRING);
 		assertTrue(packet instanceof RedisBulkStringPacket);
 		RedisBulkStringPacket bulkPacket = (RedisBulkStringPacket) packet;
-		assertEquals(str, bulkPacket.getData());
+		assertEquals(str, new String(bulkPacket.getData()));
 	}
 
 	/**
@@ -654,7 +641,7 @@ public class RedisProtocolParserTest {
 	public void testSubOneIntegerDataOneStringDataArrayPacket() throws Exception {
 		StringBuilder redisData = new StringBuilder();
 		redisData.append('*');
-		redisData.append(2); 
+		redisData.append(2);
 		redisData.append(CRLF);
 		redisData.append(':');
 		redisData.append(1);

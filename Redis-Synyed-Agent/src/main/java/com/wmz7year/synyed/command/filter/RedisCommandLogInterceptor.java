@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import com.wmz7year.synyed.entity.RedisCommand;
 import com.wmz7year.synyed.entity.RedisServer;
 import com.wmz7year.synyed.exception.RedisCommandRejectedException;
 
@@ -22,24 +23,24 @@ public class RedisCommandLogInterceptor implements RedisCommandInterceptor {
 
 	/*
 	 * @see com.wmz7year.synyed.command.filter.RedisCommandInterceptor#
-	 * beforeSendCommand(java.lang.String,
+	 * beforeSendCommand(com.wmz7year.synyed.entity.RedisCommand,
 	 * com.wmz7year.synyed.entity.RedisServer,
 	 * com.wmz7year.synyed.entity.RedisServer)
 	 */
 	@Override
-	public void beforeSendCommand(String command, RedisServer srcServer, RedisServer descServer)
+	public void beforeSendCommand(RedisCommand command, RedisServer srcServer, RedisServer descServer)
 			throws RedisCommandRejectedException {
 		logger.info("beforeSendCommand:" + command);
 	}
 
 	/*
 	 * @see com.wmz7year.synyed.command.filter.RedisCommandInterceptor#
-	 * afterSendCommand(java.lang.String, boolean,
+	 * afterSendCommand(com.wmz7year.synyed.entity.RedisCommand, boolean,
 	 * com.wmz7year.synyed.entity.RedisServer,
 	 * com.wmz7year.synyed.entity.RedisServer)
 	 */
 	@Override
-	public void afterSendCommand(String command, boolean result, RedisServer srcServer, RedisServer descServer)
+	public void afterSendCommand(RedisCommand command, boolean result, RedisServer srcServer, RedisServer descServer)
 			throws RedisCommandRejectedException {
 		logger.info("afterSendCommand:" + command);
 	}

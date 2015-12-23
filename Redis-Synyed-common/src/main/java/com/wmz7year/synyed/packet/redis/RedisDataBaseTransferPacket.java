@@ -97,4 +97,14 @@ public class RedisDataBaseTransferPacket extends RedisPacket {
 		return "RedisDataBaseTransferPacket [rdbFile=" + rdbFile + "]";
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.wmz7year.synyed.packet.redis.RedisPacket#getData()
+	 */
+	@Override
+	public byte[] getData() {
+		return rdbContent;
+	}
+
 }

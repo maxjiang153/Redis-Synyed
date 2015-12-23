@@ -15,9 +15,14 @@ public class RedisErrorPacket extends RedisPacket {
 	 * 错误信息的提示语
 	 */
 	private String errorMessage;
+	/**
+	 * 数据内容
+	 */
+	private byte[] data;
 
-	public RedisErrorPacket(String command) {
+	public RedisErrorPacket(String command, byte[] data) {
 		super(command);
+		this.data = data;
 	}
 
 	public String getErrorMessage() {
@@ -34,6 +39,14 @@ public class RedisErrorPacket extends RedisPacket {
 	@Override
 	public String toString() {
 		return "RedisErrorPacket [errorMessage=" + errorMessage + ", command=" + command + "]";
+	}
+
+	/*
+	 * @see com.wmz7year.synyed.packet.redis.RedisPacket#getData()
+	 */
+	@Override
+	public byte[] getData() {
+		return data;
 	}
 
 }

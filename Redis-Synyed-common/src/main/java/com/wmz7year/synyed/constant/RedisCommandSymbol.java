@@ -3,8 +3,6 @@ package com.wmz7year.synyed.constant;
 /**
  * 封装Redis命令符号常量类
  * 
- * FIXME：常量按字母顺序排序
- * 
  * @Title: RedisCommandSymbol.java
  * @Package com.wmz7year.synyed.constant
  * @author jiangwei (ydswcy513@gmail.com)
@@ -23,7 +21,7 @@ public class RedisCommandSymbol {
 	/**
 	 * 空格
 	 */
-	public static final char BLANK = ' ';
+	public static final byte BLANK = ' ';
 	/**
 	 * 复合类型的字符串
 	 */
@@ -41,12 +39,74 @@ public class RedisCommandSymbol {
 	 */
 	public static final String INTEGER = "INTEGER";
 	/**
+	 * 向指定的key设置 k v值的方法<br>
+	 * 
+	 * http://redis.io/commands/hset<br>
+	 * 
+	 * <pre>
+	 * 		HSET key field value
+	 * </pre>
+	 */
+	public static final String HSET = "HSET";
+	/**
+	 * 向一个list中添加值<br>
+	 * 
+	 * http://redis.io/commands/lpush<br>
+	 * 
+	 * <pre>
+	 * 		LPUSH key value1 value2 value3...
+	 * </pre>
+	 */
+	public static final String LPUSH = "LPUSH";
+	/**
 	 * redis成功符号
 	 */
 	public static final String OK = "OK";
 	/**
-	 * ping命令
+	 * 心跳检查包<br>
+	 * http://redis.io/commands/ping<br>
+	 * 
+	 * <pre>
+	 * PING
+	 * </pre>
 	 */
 	public static final String PING = "PING";
-
+	/**
+	 * 选择数据库的命令<br>
+	 * http://redis.io/commands/SELECT<br>
+	 * 
+	 * <pre>
+	 * 		SELECT dbnum
+	 * </pre>
+	 */
+	public static final String SELECT = "SELECT";
+	/**
+	 * 向指定KEY设置值<br>
+	 * 
+	 * http://redis.io/commands/set<br>
+	 * 
+	 * <pre>
+	 * 		SET key value
+	 * </pre>
+	 */
+	public static final String SET = "SET";
+	/**
+	 * 执行同步的命令
+	 * 
+	 * http://redis.io/commands/sync<br>
+	 * 
+	 * <pre>
+	 * SYNC
+	 * </pre>
+	 */
+	public static final String SYNC = "SYNC";
+	/**
+	 * 向指定key插入sort set值的方法<br>
+	 * http://redis.io/commands/zadd<br>
+	 * 
+	 * <pre>
+	 * 		ZADD key field value
+	 * </pre>
+	 */
+	public static final String ZADD = "ZADD";
 }

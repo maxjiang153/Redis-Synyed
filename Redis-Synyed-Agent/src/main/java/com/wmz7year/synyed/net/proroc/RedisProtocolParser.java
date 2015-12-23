@@ -410,7 +410,7 @@ public class RedisProtocolParser {
 			return null;
 		}
 		// 转换为数据包对象
-		RedisSimpleStringPacket simpleStringPacket = new RedisSimpleStringPacket(new String(packetData));
+		RedisSimpleStringPacket simpleStringPacket = new RedisSimpleStringPacket(new String(packetData), packetData);
 		return simpleStringPacket;
 	}
 
@@ -540,7 +540,7 @@ public class RedisProtocolParser {
 			return null;
 		}
 		RedisBulkStringPacket packet = new RedisBulkStringPacket(BULKSTRING);
-		packet.setData(new String(packetData));
+		packet.setData(packetData);
 		return packet;
 	}
 
@@ -609,7 +609,7 @@ public class RedisProtocolParser {
 			return null;
 		}
 		long result = Long.parseLong(new String(packetData));
-		RedisIntegerPacket integerPacket = new RedisIntegerPacket(INTEGER);
+		RedisIntegerPacket integerPacket = new RedisIntegerPacket(INTEGER, packetData);
 		integerPacket.setNum(result);
 		return integerPacket;
 	}
@@ -700,7 +700,7 @@ public class RedisProtocolParser {
 		if (packetData == null) {
 			return null;
 		}
-		RedisErrorPacket errorPacket = new RedisErrorPacket(new String(ERR));
+		RedisErrorPacket errorPacket = new RedisErrorPacket(new String(ERR), packetData);
 		errorPacket.setErrorMessage(new String(packetData));
 		return errorPacket;
 	}

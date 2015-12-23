@@ -1,9 +1,11 @@
 package com.wmz7year.synyed.parser.entry;
 
-import static com.wmz7year.synyed.constant.RedisCommand.*;
+import static com.wmz7year.synyed.constant.RedisCommandSymbol.*;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import com.wmz7year.synyed.entity.RedisCommand;
 
 /**
  * rdb文件内容转换为redis命令的方法
@@ -39,8 +41,8 @@ public class RedisRDBCommand {
 	 * 
 	 * @return redis命令集合
 	 */
-	public List<String> getCommands() {
-		List<String> commands = new ArrayList<String>();
+	public List<RedisCommand> getCommands() {
+		List<RedisCommand> commands = new ArrayList<RedisCommand>();
 		if (value instanceof RedisHashObject) {
 			// TODO
 			System.out.println("RedisHashObject");
@@ -85,10 +87,11 @@ public class RedisRDBCommand {
 	 * 
 	 * @return set命令
 	 */
-	private String createSETCommand() {
-		StringBuilder builder = new StringBuilder();
-		builder.append(SET).append(' ').append(key.toCommand()).append(' ').append(value.toCommand());
-		return builder.toString();
+	private RedisCommand createSETCommand() {
+		RedisCommand result = new RedisCommand(SET);
+		result.setKey(key.getBuffer());
+		result.addValue(value.getBuffer());
+		return result;
 	}
 
 	/**
@@ -98,10 +101,11 @@ public class RedisRDBCommand {
 	 * 
 	 * @return lpush命令
 	 */
-	private String createLPUSHCommand() {
-		StringBuilder builder = new StringBuilder();
-		builder.append(LPUSH).append(' ').append(key.toCommand()).append(' ').append(value.toCommand());
-		return builder.toString();
+	private RedisCommand createLPUSHCommand() {
+		RedisCommand result = new RedisCommand(LPUSH);
+		result.setKey(key.getBuffer());
+		result.addValue(value.getBuffer());
+		return result;
 	}
 
 	/**
@@ -111,15 +115,16 @@ public class RedisRDBCommand {
 	 * 
 	 * @return hset命令
 	 */
-	private List<String> createHSETCommand() {
-		List<String> commands = new ArrayList<String>();
+	private List<RedisCommand> createHSETCommand() {
+		List<RedisCommand> commands = new ArrayList<RedisCommand>();
 		RedisHashZipList hashZipList = (RedisHashZipList) value;
-		List<String> elements = hashZipList.getElements();
+		List<byte[]> elements = hashZipList.getElements();
 		for (int i = 0; i < hashZipList.getElementCount(); i += 2) {
-			StringBuilder builder = new StringBuilder();
-			builder.append(HSET).append(' ').append(key.toCommand()).append(' ').append(elements.get(i)).append(' ')
-					.append(elements.get(i + 1));
-			commands.add(builder.toString());
+			RedisCommand result = new RedisCommand(HSET);
+			result.setKey(key.getBuffer());
+			result.addValue(elements.get(i));
+			result.addValue(elements.get(i + 1));
+			commands.add(result);
 		}
 		return commands;
 	}
@@ -131,10 +136,11 @@ public class RedisRDBCommand {
 	 * 
 	 * @return zadd命令
 	 */
-	private String createZADDCommand() {
-		StringBuilder builder = new StringBuilder();
-		builder.append(ZADD).append(' ').append(key.toCommand()).append(' ').append(value.toCommand());
-		return builder.toString();
+	private RedisCommand createZADDCommand() {
+		RedisCommand result = new RedisCommand(ZADD);
+		result.setKey(key.getBuffer());
+		result.addValue(value.getBuffer());
+		return result;
 	}
 
 	/*

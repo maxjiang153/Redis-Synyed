@@ -13,17 +13,22 @@ public class RedisBulkStringPacket extends RedisPacket {
 	/**
 	 * 字符串内容
 	 */
-	private String data;
+	private byte[] data;
 
 	public RedisBulkStringPacket(String command) {
 		super(command);
 	}
 
-	public String getData() {
+	/*
+	 * @see com.wmz7year.synyed.packet.redis.RedisPacket#getData()
+	 */
+	@Override
+	public byte[] getData() {
 		return data;
 	}
 
-	public void setData(String data) {
+	public void setData(byte[] data) {
+		super.setCommand(new String(data));
 		this.data = data;
 	}
 
@@ -32,7 +37,7 @@ public class RedisBulkStringPacket extends RedisPacket {
 	 */
 	@Override
 	public String toString() {
-		return "RedisBulkStringPacket [data=" + data + "]";
+		return "RedisBulkStringPacket [data=" + new String(data) + "]";
 	}
 
 }

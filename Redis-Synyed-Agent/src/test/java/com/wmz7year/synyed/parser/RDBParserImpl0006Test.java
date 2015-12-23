@@ -14,6 +14,7 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.wmz7year.synyed.Booter;
+import com.wmz7year.synyed.entity.RedisCommand;
 import com.wmz7year.synyed.parser.entry.RedisDB;
 import com.wmz7year.synyed.parser.entry.RedisHashZipMap;
 import com.wmz7year.synyed.parser.entry.RedisSetIntSet;
@@ -55,8 +56,8 @@ public class RDBParserImpl0006Test {
 
 		Collection<RedisDB> redisDBs = rdbParser.getRedisDBs();
 		for (RedisDB redisDB : redisDBs) {
-			List<String> commands = redisDB.getCommands();
-			for (String command : commands) {
+			List<RedisCommand> commands = redisDB.getCommands();
+			for (RedisCommand command : commands) {
 				logger.info("redis command rdb:" + redisDB.getNum() + " command：" + command);
 			}
 		}
