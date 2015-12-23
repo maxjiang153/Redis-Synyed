@@ -17,6 +17,7 @@ import com.wmz7year.synyed.module.RedisCommandFilterManager;
 import com.wmz7year.synyed.net.RedisConnection;
 import com.wmz7year.synyed.net.RedisResponseListener;
 import com.wmz7year.synyed.net.spi.DefaultRedisConnection;
+import com.wmz7year.synyed.packet.redis.RedisIntegerPacket;
 import com.wmz7year.synyed.packet.redis.RedisPacket;
 import com.wmz7year.synyed.packet.redis.RedisSimpleStringPacket;
 import com.wmz7year.synyed.packet.redis.command.RedisPacketCommandParser;
@@ -250,6 +251,11 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 		if (responsePacket instanceof RedisSimpleStringPacket) {
 			RedisSimpleStringPacket simpleStringPacket = (RedisSimpleStringPacket) responsePacket;
 			if (OK.equals(simpleStringPacket.getCommand())) {
+				return true;
+			}
+		} else if (responsePacket instanceof RedisIntegerPacket) {
+			RedisIntegerPacket integerPacket = (RedisIntegerPacket) responsePacket;
+			if (integerPacket.getNum() == 1) {
 				return true;
 			}
 		} else {
