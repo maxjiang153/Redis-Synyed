@@ -91,8 +91,10 @@ public class RedisPacketCommandParser {
 						logger.debug("收到了ping包");
 					}
 					return Collections.emptyList();
+				}else{
+					result.add(bulkPacket.getData());
 				}
-			}
+			} 
 		} else {
 			StringBuilder commandBuilder = new StringBuilder();
 			List<RedisPacket> packets = packet.getPackets();
