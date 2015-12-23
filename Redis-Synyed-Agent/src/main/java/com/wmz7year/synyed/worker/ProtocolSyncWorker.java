@@ -1,5 +1,7 @@
 package com.wmz7year.synyed.worker;
 
+import static com.wmz7year.synyed.constant.RedisCommandSymbol.*;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -16,6 +18,7 @@ import com.wmz7year.synyed.net.RedisConnection;
 import com.wmz7year.synyed.net.RedisResponseListener;
 import com.wmz7year.synyed.net.spi.DefaultRedisConnection;
 import com.wmz7year.synyed.packet.redis.RedisPacket;
+import com.wmz7year.synyed.packet.redis.RedisSimpleStringPacket;
 import com.wmz7year.synyed.packet.redis.command.RedisPacketCommandParser;
 
 /**
@@ -197,15 +200,13 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 			// 在命令发送前进行过滤操作
 			redisCommandFilterManager.beforeSendCommand(command, srcServer, descServer);
 
-			// TODO 写入到文件
-
 			// 发送命令到目标服务器
 			RedisPacket responsePacket = sendCommandToTargetServer(command);
 			// 处理响应
-			processResponsePacket(responsePacket);
+			boolean result = processResponsePacket(responsePacket);
 
 			// 在命令发送后进行过滤操作
-			redisCommandFilterManager.afterSendCommand(command, responsePacket, srcServer, descServer);
+			redisCommandFilterManager.afterSendCommand(command, result, srcServer, descServer);
 		} catch (RedisCommandRejectedException e) {
 			logger.info("命令：" + command + " 被拦截器拦截");
 		} catch (RedisProtocolException e) {
@@ -240,8 +241,17 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 	 * 
 	 * @param responsePacket
 	 *            响应数据包对象
+	 * @return true为命令执行成功 false为命令执行失败
 	 */
-	private void processResponsePacket(RedisPacket responsePacket) {
-		System.err.println("responsePacket:" + responsePacket);
+	private boolean processResponsePacket(RedisPacket responsePacket) {
+		if (responsePacket instanceof RedisSimpleStringPacket) {
+			RedisSimpleStringPacket simpleStringPacket = (RedisSimpleStringPacket) responsePacket;
+			if (OK.equals(simpleStringPacket.getCommand())) {
+				return true;
+			}
+		} else {
+			System.err.println("responsePacket:" + responsePacket);
+		}
+		return false;
 	}
 }

@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 
 import com.wmz7year.synyed.entity.RedisServer;
 import com.wmz7year.synyed.exception.RedisCommandRejectedException;
-import com.wmz7year.synyed.packet.redis.RedisPacket;
 
 /**
  * 对同步命令进行日志记录的拦截器
@@ -35,14 +34,13 @@ public class RedisCommandLogInterceptor implements RedisCommandInterceptor {
 
 	/*
 	 * @see com.wmz7year.synyed.command.filter.RedisCommandInterceptor#
-	 * afterSendCommand(java.lang.String,
-	 * com.wmz7year.synyed.packet.redis.RedisPacket,
+	 * afterSendCommand(java.lang.String, boolean,
 	 * com.wmz7year.synyed.entity.RedisServer,
 	 * com.wmz7year.synyed.entity.RedisServer)
 	 */
 	@Override
-	public void afterSendCommand(String command, RedisPacket responsePacket, RedisServer srcServer,
-			RedisServer descServer) throws RedisCommandRejectedException {
+	public void afterSendCommand(String command, boolean result, RedisServer srcServer, RedisServer descServer)
+			throws RedisCommandRejectedException {
 		logger.info("afterSendCommand:" + command);
 	}
 
