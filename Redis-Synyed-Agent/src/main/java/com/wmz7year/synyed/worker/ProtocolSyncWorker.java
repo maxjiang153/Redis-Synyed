@@ -255,7 +255,7 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 			}
 		} else if (responsePacket instanceof RedisIntegerPacket) {
 			RedisIntegerPacket integerPacket = (RedisIntegerPacket) responsePacket;
-			if (integerPacket.getNum() == 1) {
+			if (integerPacket.getNum() != 0) {
 				return true;
 			}
 		} else {
