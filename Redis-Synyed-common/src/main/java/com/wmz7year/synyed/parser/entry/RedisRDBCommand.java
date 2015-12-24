@@ -61,7 +61,7 @@ public class RedisRDBCommand {
 			System.out.println("RedisSetIntSet");
 		} else if (value instanceof RedisSetObject) {
 			// set 类型的value 生成redis sadd命令
-			commands.addAll(createSADDCommand());
+			commands.add(createSADDCommand());
 		} else if (value instanceof RedisStringObject) {
 			// string 类型的value 生成redis set命令
 			commands.add(createSETCommand());
@@ -95,17 +95,15 @@ public class RedisRDBCommand {
 	 * 
 	 * return sadd命令
 	 */
-	private List<RedisCommand> createSADDCommand() {
-		List<RedisCommand> commands = new ArrayList<RedisCommand>();
+	private RedisCommand createSADDCommand() {
+		RedisCommand result = new RedisCommand(SADD);
+		result.addValue(key.getBuffer());
 		RedisSetObject redisSet = (RedisSetObject) value;
 		List<RedisCommandData> elements = redisSet.getElements();
 		for (int i = 0; i < elements.size(); i++) {
-			RedisCommand result = new RedisCommand(SADD);
-			result.addValue(key.getBuffer());
 			result.addValue(elements.get(i).getData());
-			commands.add(result);
 		}
-		return commands;
+		return result;
 	}
 
 	/**
