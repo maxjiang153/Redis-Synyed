@@ -77,7 +77,14 @@ public class RedisRDBCommand {
 		} else {
 			throw new IllegalStateException("不支持的数据类型：" + value.getClass().getName());
 		}
-		// TODO 过期时间
+
+		// 设置过期时间
+		if (expiretime != -1) {
+			RedisCommand expireatCommand = new RedisCommand(EXPIREAT);
+			expireatCommand.addValue(this.key.getBuffer());
+			expireatCommand.addValue(String.valueOf(expiretime));
+			commands.add(expireatCommand);
+		}
 		return commands;
 	}
 

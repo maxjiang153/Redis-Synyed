@@ -34,6 +34,16 @@ public class RedisCommandSymbol {
 	 * redis错误符号
 	 */
 	public static final String ERR = "ERR";
+
+	/**
+	 * 设置一个key在指定时间过期<br>
+	 * http://redis.io/commands/expireat<br>
+	 * 
+	 * <pre>
+	 * 		 EXPIREAT mykey 1293840000
+	 * </pre>
+	 */
+	public static final String EXPIREAT = "EXPIREAT";
 	/**
 	 * 整数类型数据包
 	 */
