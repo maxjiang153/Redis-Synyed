@@ -67,7 +67,7 @@ public class NumberUtil {
 			throw new IllegalArgumentException(
 					"Error buffer length can not cover bytes to int:" + Arrays.toString(buffer));
 		}
-		return (((buffer[1] & 0xff) << 8) | ((buffer[0] & 0xff)));
+		return (short) (((buffer[1] & 0xFF) << 8) | (buffer[0] & 0xFF));
 	}
 
 	/**

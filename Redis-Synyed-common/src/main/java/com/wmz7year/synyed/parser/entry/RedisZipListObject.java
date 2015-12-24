@@ -220,21 +220,24 @@ public class RedisZipListObject extends RedisObject {
 				throw new RedisRDBException("解析错误");
 			}
 			elementReadLength += 2;
-			return new RedisCommandData(buffer);
+			int result = byte216bitInt(buffer);
+			return new RedisCommandData(String.valueOf(result).getBytes());
 		} else if (bit7 == 1 && bit6 == 1 && bit5 == 0 && bit4 == 1) { // 32bit整数
 			byte[] buffer = new byte[4];
 			if (!readBytes(buffer, 0, 4)) {
 				throw new RedisRDBException("解析错误");
 			}
 			elementReadLength += 4;
-			return new RedisCommandData(buffer);
+			int result = byte2Int(buffer);
+			return new RedisCommandData(String.valueOf(result).getBytes());
 		} else if (bit7 == 1 && bit6 == 1 && bit5 == 1 && bit4 == 0) { // 64bit整数
 			byte[] buffer = new byte[8];
 			if (!readBytes(buffer, 0, 8)) {
 				throw new RedisRDBException("解析错误");
 			}
 			elementReadLength += 8;
-			return new RedisCommandData(buffer);
+			long result = byte2Long(buffer);
+			return new RedisCommandData(String.valueOf(result).getBytes());
 		} else if (bit7 == 1 && bit6 == 1 && bit5 == 1 && bit4 == 1 && bit3 == 0 && bit2 == 0 && bit1 == 0
 				&& bit0 == 0) { // 24bit整数
 			byte[] buffer = new byte[3];
@@ -242,7 +245,8 @@ public class RedisZipListObject extends RedisObject {
 				throw new RedisRDBException("解析错误");
 			}
 			elementReadLength += 3;
-			return new RedisCommandData(buffer);
+			int result = byte224bitInt(buffer);
+			return new RedisCommandData(String.valueOf(result).getBytes());
 		} else if (bit7 == 1 && bit6 == 1 && bit5 == 1 && bit4 == 1 && bit3 == 1 && bit2 == 1 && bit1 == 1
 				&& bit0 == 0) { // 8bit整数
 			byte result = readByte();
