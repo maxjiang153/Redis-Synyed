@@ -48,6 +48,18 @@ public class RedisCommandSymbol {
 	 * 整数类型数据包
 	 */
 	public static final String INTEGER = "INTEGER";
+
+	/**
+	 * 原始的方式获取值并且设置新的值<br>
+	 * 必须在存在对应key的时候才能set 否则会出现异常<br>
+	 * http://redis.io/commands/getset<br>
+	 * 
+	 * <pre>
+	 *  set a b getset a c
+	 * </pre>
+	 */
+	public static final String GETSET = "GETSET";
+
 	/**
 	 * 向指定的key设置 k v值的方法<br>
 	 * 

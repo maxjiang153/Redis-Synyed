@@ -60,6 +60,10 @@ public class RedisCommand {
 		return this.command;
 	}
 
+	public void setCommand(String command) {
+		this.command = command;
+	}
+
 	public List<RedisCommandData> getValues() {
 		return this.values;
 	}
