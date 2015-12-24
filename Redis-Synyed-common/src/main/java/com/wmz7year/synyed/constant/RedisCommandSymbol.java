@@ -45,7 +45,7 @@ public class RedisCommandSymbol {
 	 * </pre>
 	 */
 	public static final String EVAL = "EVAL";
-	
+
 	/**
 	 * 执行脚本的命令<br>
 	 * 
@@ -115,6 +115,15 @@ public class RedisCommandSymbol {
 	 * </pre>
 	 */
 	public static final String PING = "PING";
+	/**
+	 * 向一个set添加一个值
+	 * http://redis.io/commands/sadd<br>
+	 * 
+	 * <pre>
+	 * 		SADD key value
+	 * </pre>
+	 */
+	public static final String SADD = "SADD";
 	/**
 	 * 选择数据库的命令<br>
 	 * http://redis.io/commands/SELECT<br>

@@ -3,8 +3,12 @@ package com.wmz7year.synyed.parser.entry;
 import static com.wmz7year.synyed.constant.RedisRDBConstant.REDIS_ENCODING_HT;
 import static com.wmz7year.synyed.constant.RedisRDBConstant.REDIS_RDB_TYPE_SET;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+
+import com.wmz7year.synyed.entity.RedisCommandData;
 
 /**
  * redis set类型数据结构对象
@@ -76,6 +80,14 @@ public class RedisSetObject extends RedisObject {
 	@Override
 	public String toString() {
 		return "RedisSetObject [elements=" + elements + "]";
+	}
+
+	public List<RedisCommandData> getElements() {
+		List<RedisCommandData> result = new ArrayList<RedisCommandData>();
+		for (RedisStringObject element : elements) {
+			result.add(new RedisCommandData(element.getBuffer()));
+		}
+		return result;
 	}
 
 }

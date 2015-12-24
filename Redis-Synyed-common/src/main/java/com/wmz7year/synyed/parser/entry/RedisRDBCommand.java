@@ -60,8 +60,8 @@ public class RedisRDBCommand {
 			// TODO
 			System.out.println("RedisSetIntSet");
 		} else if (value instanceof RedisSetObject) {
-			// TODO
-			System.out.println("RedisSetObject");
+			// set 类型的value 生成redis sadd命令
+			commands.addAll(createSADDCommand());
 		} else if (value instanceof RedisStringObject) {
 			// string 类型的value 生成redis set命令
 			commands.add(createSETCommand());
@@ -84,6 +84,26 @@ public class RedisRDBCommand {
 			expireatCommand.addValue(this.key.getBuffer());
 			expireatCommand.addValue(String.valueOf(expiretime));
 			commands.add(expireatCommand);
+		}
+		return commands;
+	}
+
+	/**
+	 * 根据key value 创建sadd命令的方法<br>
+	 * 
+	 * sadd key value
+	 * 
+	 * return sadd命令
+	 */
+	private List<RedisCommand> createSADDCommand() {
+		List<RedisCommand> commands = new ArrayList<RedisCommand>();
+		RedisSetObject redisSet = (RedisSetObject) value;
+		List<RedisCommandData> elements = redisSet.getElements();
+		for (int i = 0; i < elements.size(); i++) {
+			RedisCommand result = new RedisCommand(SADD);
+			result.addValue(key.getBuffer());
+			result.addValue(elements.get(i).getData());
+			commands.add(result);
 		}
 		return commands;
 	}
