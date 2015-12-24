@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.wmz7year.synyed.entity.RedisCommand;
+import com.wmz7year.synyed.entity.RedisCommandData;
 
 /**
  * rdb文件内容转换为redis命令的方法
@@ -102,9 +103,13 @@ public class RedisRDBCommand {
 	 * @return lpush命令
 	 */
 	private RedisCommand createLPUSHCommand() {
+		RedisZipListObject ziplist = (RedisZipListObject) value;
 		RedisCommand result = new RedisCommand(LPUSH);
 		result.addValue(key.getBuffer());
-		result.addValue(value.getBuffer());
+		List<RedisCommandData> elements = ziplist.getElements();
+		for (RedisCommandData redisCommandData : elements) {
+			result.addValue(redisCommandData.getData());
+		}
 		return result;
 	}
 
