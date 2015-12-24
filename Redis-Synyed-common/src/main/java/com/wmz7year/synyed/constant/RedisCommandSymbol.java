@@ -36,6 +36,28 @@ public class RedisCommandSymbol {
 	public static final String ERR = "ERR";
 
 	/**
+	 * 执行脚本的命令<br>
+	 * 
+	 * http://redis.io/commands/eval <br>
+	 * 
+	 * <pre>
+	 * 		EVAL "command"
+	 * </pre>
+	 */
+	public static final String EVAL = "EVAL";
+	
+	/**
+	 * 执行脚本的命令<br>
+	 * 
+	 * http://redis.io/commands/eval <br>
+	 * 
+	 * <pre>
+	 * 		EVAL "command"
+	 * </pre>
+	 */
+	public static final String EVALSHA = "EVAL";
+
+	/**
 	 * 设置一个key在指定时间过期<br>
 	 * http://redis.io/commands/expireat<br>
 	 * 
