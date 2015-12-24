@@ -130,12 +130,12 @@ public class RedisRDBCommand {
 	private List<RedisCommand> createHSETCommand() {
 		List<RedisCommand> commands = new ArrayList<RedisCommand>();
 		RedisHashZipList hashZipList = (RedisHashZipList) value;
-		List<byte[]> elements = hashZipList.getElements();
+		List<RedisCommandData> elements = hashZipList.getElements();
 		for (int i = 0; i < hashZipList.getElementCount(); i += 2) {
 			RedisCommand result = new RedisCommand(HSET);
 			result.addValue(key.getBuffer());
-			result.addValue(elements.get(i));
-			result.addValue(elements.get(i + 1));
+			result.addValue(elements.get(i).getData());
+			result.addValue(elements.get(i + 1).getData());
 			commands.add(result);
 		}
 		return commands;

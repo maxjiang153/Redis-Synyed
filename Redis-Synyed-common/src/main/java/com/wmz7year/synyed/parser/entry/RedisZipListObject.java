@@ -247,10 +247,10 @@ public class RedisZipListObject extends RedisObject {
 				&& bit0 == 0) { // 8bit整数
 			byte result = readByte();
 			elementReadLength++;
-			return new RedisCommandData(new byte[] { result });
+			return new RedisCommandData(String.valueOf(result).getBytes());
 		} else if (bit7 == 1 && bit6 == 1 && bit5 == 1 && bit4 == 1) { // 4bit整数数据
 			byte result = (byte) ((bit3 << 3) + (bit2 << 2) + (bit1 << 1) + (bit0 << 0) - 1);
-			return new RedisCommandData(new byte[] { result });
+			return new RedisCommandData(String.valueOf(result).getBytes());
 		} else {
 			throw new RedisRDBException("不支持的entry special符号");
 		}
