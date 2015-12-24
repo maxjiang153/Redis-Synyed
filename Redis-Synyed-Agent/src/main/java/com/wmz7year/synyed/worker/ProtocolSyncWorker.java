@@ -252,21 +252,12 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 	private boolean processResponsePacket(RedisPacket responsePacket) {
 		if (responsePacket instanceof RedisSimpleStringPacket) {
 			RedisSimpleStringPacket simpleStringPacket = (RedisSimpleStringPacket) responsePacket;
-			if (OK.equals(simpleStringPacket.getCommand())) {
+			if (ERR.equals(simpleStringPacket.getCommand())) {
+				String errorInfo = new String(simpleStringPacket.getData());
+				logger.error("执行Redis命令失败 - " + errorInfo);
 				return true;
 			}
-		} else if (responsePacket instanceof RedisIntegerPacket) {
-			RedisIntegerPacket integerPacket = (RedisIntegerPacket) responsePacket;
-			if (integerPacket.getNum() != 0) {
-				return true;
-			}
-		} else if (responsePacket instanceof RedisBulkStringPacket) {
-			if (ERR.equals(responsePacket.getCommand())) {
-				return false;
-			}
-		} else {
-			System.err.println("responsePacket:" + responsePacket);
 		}
-		return false;
+		return true;
 	}
 }
