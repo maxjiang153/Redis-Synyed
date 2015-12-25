@@ -15,18 +15,14 @@ import com.wmz7year.synyed.packet.redis.RedisArraysPacket;
 import com.wmz7year.synyed.packet.redis.RedisBulkStringPacket;
 import com.wmz7year.synyed.packet.redis.RedisDataBaseTransferPacket;
 import com.wmz7year.synyed.packet.redis.RedisErrorPacket;
-import com.wmz7year.synyed.packet.redis.RedisIntegerPacket;
 import com.wmz7year.synyed.packet.redis.RedisPacket;
-import com.wmz7year.synyed.packet.redis.RedisSimpleStringPacket;
 import com.wmz7year.synyed.parser.entry.RedisDB;
 
 /**
  * redis数据包语法生成Redis命令的解析器<br>
  * 
- * @Title: RedisPacketCommandParser.java
- * @Package com.wmz7year.synyed.packet.redis.command
  * @author jiangwei (ydswcy513@gmail.com)
- * @date 2015年12月22日 上午10:24:58
+ * @since 2015年12月25日 下午3:37:45
  * @version V1.0
  */
 public class RedisPacketCommandParser {
@@ -49,20 +45,11 @@ public class RedisPacketCommandParser {
 		if (redisPacket instanceof RedisArraysPacket) { // 数组类型数据包
 			List<RedisCommand> result = parserRedisArraysPacket(redisPacket);
 			commands.addAll(result);
-		} else if (redisPacket instanceof RedisBulkStringPacket) { // 复合类型字符串数据包
-			// TODO
-			System.out.println("RedisBulkStringPacket");
 		} else if (redisPacket instanceof RedisDataBaseTransferPacket) { // 数据库传输包
 			List<RedisCommand> result = parserRedisDataBaseTransferPacket(redisPacket);
 			commands.addAll(result);
 		} else if (redisPacket instanceof RedisErrorPacket) { // 错误信息类型数据包
 			logger.warn("收到错误类型数据包   不进行解析操作：" + redisPacket);
-		} else if (redisPacket instanceof RedisIntegerPacket) { // 整数类型数据包
-			// TODO
-			System.out.println("RedisIntegerPacket");
-		} else if (redisPacket instanceof RedisSimpleStringPacket) { // 简单字符串类型数据包
-			// TODO
-			System.out.println("RedisSimpleStringPacket");
 		} else {
 			logger.error("不支持的数据包类型：" + redisPacket.getClass().getName());
 			throw new IllegalArgumentException("不支持的数据包类型：" + redisPacket.getClass().getName());
