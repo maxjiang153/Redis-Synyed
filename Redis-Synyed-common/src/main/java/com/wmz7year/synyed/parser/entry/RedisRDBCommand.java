@@ -167,9 +167,15 @@ public class RedisRDBCommand {
 	 * @return zadd命令
 	 */
 	private RedisCommand createZADDCommand() {
+		RedisZSetZipList zsetZipList = (RedisZSetZipList) value;
 		RedisCommand result = new RedisCommand(ZADD);
 		result.addValue(key.getBuffer());
-		result.addValue(value.getBuffer());
+		List<RedisCommandData> elements = zsetZipList.getElements();
+		int entryCount = zsetZipList.getElementCount();
+		for (int i = 0; i < entryCount; i += 2) {
+			result.addValue(elements.get(i + 1).getData());
+			result.addValue(elements.get(i).getData());
+		}
 		return result;
 	}
 

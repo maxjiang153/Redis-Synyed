@@ -3,10 +3,8 @@ package com.wmz7year.synyed.constant;
 /**
  * 封装Redis命令符号常量类
  * 
- * @Title: RedisCommandSymbol.java
- * @Package com.wmz7year.synyed.constant
  * @author jiangwei (ydswcy513@gmail.com)
- * @date 2015年12月11日 上午11:10:51
+ * @since 2015年12月25日 上午11:33:05
  * @version V1.0
  */
 public class RedisCommandSymbol {
@@ -116,7 +114,7 @@ public class RedisCommandSymbol {
 	 */
 	public static final String PING = "PING";
 	/**
-	 * 向一个set添加一个值
+	 * 向一个set添加一个值<br>
 	 * http://redis.io/commands/sadd<br>
 	 * 
 	 * <pre>
