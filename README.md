@@ -12,7 +12,7 @@
 	4、系统高可用性保障
 
 ####阶段实现方案：     
-	* 实现单Agent的源Redis到目标Redis数据单向同步
+	* ~~实现单Agent的源Redis到目标Redis数据单向同步
 	* 实现单Agent的源Redis到多个目标Redis的数据单向同步
 	* 实现单Agent的多个源Redis到单个目标Redis的数据单向同步
 	* 实现单Agent的多个源Redis到多个目标Redis的数据单向同步
@@ -22,6 +22,8 @@
 ####目前进度：
 	- 完成Redis网络协议解析
 	- 完成Redis rdb文件内容解析
+	- 完成Redis网络协议数据包转换为Redis命令语义分析
+	- 目前支持单Agent 单源Redis 单目标Redis的数据同步
 
 ####模块：
 
