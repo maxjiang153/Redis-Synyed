@@ -30,7 +30,7 @@ public class RedisCommandLogInterceptor implements RedisCommandInterceptor {
 	@Override
 	public void beforeSendCommand(RedisCommand command, RedisServer srcServer, RedisServer descServer)
 			throws RedisCommandRejectedException {
-		logger.info("beforeSendCommand:" + command);
+		logger.info("准备同步命令:" + command);
 	}
 
 	/*
@@ -42,7 +42,7 @@ public class RedisCommandLogInterceptor implements RedisCommandInterceptor {
 	@Override
 	public void afterSendCommand(RedisCommand command, boolean result, RedisServer srcServer, RedisServer descServer)
 			throws RedisCommandRejectedException {
-		logger.info("afterSendCommand:" + command);
+		logger.info("同步命令:" + command + " 结果：" + result);
 	}
 
 	/*
