@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.mina.core.service.IoHandlerAdapter;
@@ -80,7 +80,11 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 	 * Redis命令执行锁<br>
 	 * 该锁的目的是保证同一时刻只有一个Redis命令在执行
 	 */
-	private Lock lock = new ReentrantLock();
+	private ReentrantLock lock = new ReentrantLock();
+	/**
+	 * 获取到响应的新号对象
+	 */
+	private final Condition responseCondition = lock.newCondition();
 
 	/**
 	 * redis包响应对象<br>
@@ -159,6 +163,11 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 			listener.receive(redisPacket);
 		} else {
 			this.response = redisPacket;
+			try {
+				this.responseCondition.signal();
+			} catch (Exception e) {
+				// ignore
+			}
 		}
 	}
 
@@ -260,24 +269,19 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 			// 发送命令到redis服务器
 			this.ioSession.write(command);
 			// 等待响应
-			long start = System.currentTimeMillis();
-			while (response == null) {
-				long current = System.currentTimeMillis();
-				if ((current - start) > this.connectionTimeOut) {
-					if (response != null) {
-						return response;
-					}
-					throw new RedisProtocolException("redis响应超时");
-				} else {
-					// 等待100毫秒
-					try {
-						TimeUnit.MILLISECONDS.sleep(100);
-					} catch (InterruptedException e) {
-						// ignore
-					}
-				}
+			try {
+				responseCondition.await(connectionTimeOut, TimeUnit.MICROSECONDS);
+			} catch (InterruptedException e) {
+				// ignore
 			}
-			return response;
+
+			// 检查响应
+			if (response != null) {
+				return response;
+			} else {
+				throw new RedisProtocolException("redis响应超时");
+			}
+
 		} finally {
 			lock.unlock();
 		}
