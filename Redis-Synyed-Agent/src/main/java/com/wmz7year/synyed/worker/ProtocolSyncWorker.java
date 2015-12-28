@@ -1,13 +1,21 @@
 package com.wmz7year.synyed.worker;
 
 import static com.wmz7year.synyed.constant.RedisCommandSymbol.*;
+import static com.wmz7year.synyed.net.spi.RedisConnectionFactory.createDefaultRedisConnection;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import com.wmz7year.synyed.constant.RedisCommandSymbol;
 import com.wmz7year.synyed.entity.RedisCommand;
@@ -17,7 +25,7 @@ import com.wmz7year.synyed.exception.RedisProtocolException;
 import com.wmz7year.synyed.module.RedisCommandFilterManager;
 import com.wmz7year.synyed.net.RedisConnection;
 import com.wmz7year.synyed.net.RedisResponseListener;
-import com.wmz7year.synyed.net.spi.DefaultRedisConnection;
+import com.wmz7year.synyed.packet.redis.RedisDataBaseTransferPacket;
 import com.wmz7year.synyed.packet.redis.RedisPacket;
 import com.wmz7year.synyed.packet.redis.RedisSimpleStringPacket;
 import com.wmz7year.synyed.packet.redis.command.RedisPacketCommandParser;
@@ -64,6 +72,14 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 	 * redis数据包命令解析器
 	 */
 	private RedisPacketCommandParser packetCommandParser = new RedisPacketCommandParser();
+
+	/**
+	 * rdb文件传输数据包执行同步的连接数量<br>
+	 * 由于RDB文件解析出的数据量巨大，可能产生太多命令<br>
+	 * 但是又没有数据写入顺序的问题 因此分不同的连接去执行
+	 */
+	@Value("${protocol.rdb.syn.connection.size}")
+	private int rdbCommandSynConnectionCount = 0;
 
 	/**
 	 * 设置管道同步源服务器信息的方法<br>
@@ -131,21 +147,9 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 	 *             当创建连接出现问题时抛出该异常
 	 */
 	private void createConnections() throws RedisProtocolException {
-		srcConnection = new DefaultRedisConnection();
-		descConnection = new DefaultRedisConnection();
+		srcConnection = createDefaultRedisConnection(srcServer, 5000);
+		descConnection = createDefaultRedisConnection(descServer, 5000);
 
-		// 分别连接到服务器
-		try {
-			srcConnection.connect(srcServer.getHost(), srcServer.getPort(), srcServer.getAuthPassword(), 5000);
-		} catch (RedisProtocolException e) {
-			throw e;
-		}
-
-		try {
-			descConnection.connect(descServer.getHost(), descServer.getPort(), descServer.getAuthPassword(), 5000);
-		} catch (RedisProtocolException e) {
-			throw e;
-		}
 	}
 
 	/**
@@ -177,9 +181,107 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 	public void receive(RedisPacket redisPacket) {
 		// 解析出命令列表
 		List<RedisCommand> commands = packetCommandParser.parseRedisPacket(redisPacket);
-		for (RedisCommand command : commands) {
-			// 处理解析出的命令
-			processCommand(command);
+		if (redisPacket instanceof RedisDataBaseTransferPacket) {
+			// 处理rdb文件传输命令
+			processRedisRDBTransferPacketCommands(commands);
+		} else {
+			for (RedisCommand command : commands) {
+				// 处理解析出的命令
+				processCommand(command);
+			}
+		}
+	}
+
+	/**
+	 * 处理Redis rdb文件传输命令解析<br>
+	 * 根据rdbPacketSynConnectionSize的数量切分命令列表<br>
+	 * 每一个线程持有一个独立的Redis连接<br>
+	 * 
+	 * @param commands
+	 *            需要同步的命令列表
+	 */
+	private void processRedisRDBTransferPacketCommands(List<RedisCommand> commands) {
+		logger.info("处理RDB文件同步连接数：" + rdbCommandSynConnectionCount);
+		// 开辟对应连接数的线程池
+		ExecutorService executorService = Executors.newFixedThreadPool(rdbCommandSynConnectionCount);
+		CompletionService<Integer> execcomp = new ExecutorCompletionService<Integer>(executorService);
+		try {
+			// 计算每个线程处理的命令行数
+			int commandCount = commands.size();
+			int pageSize = commandCount % rdbCommandSynConnectionCount == 0
+					? commandCount / rdbCommandSynConnectionCount : commandCount / rdbCommandSynConnectionCount + 1;
+
+			// 对命令列表平均分页处理
+			for (int i = 0; i < rdbCommandSynConnectionCount; i++) {
+				final List<RedisCommand> subCommands;
+				if (i + 1 == rdbCommandSynConnectionCount) {
+					subCommands = commands.subList(pageSize * i, commandCount);
+				} else {
+					subCommands = commands.subList(pageSize * i, pageSize * (i + 1));
+				}
+
+				// 交给线程池执行同步
+				execcomp.submit(new Callable<Integer>() {
+
+					/*
+					 * @see java.util.concurrent.Callable#call()
+					 */
+					@Override
+					public Integer call() throws Exception {
+						RedisConnection redisConnection = createDefaultRedisConnection(descServer, 5000);
+						int successCount = 0;
+						for (RedisCommand command : subCommands) {
+
+							if (logger.isDebugEnabled()) {
+								logger.debug("开始处理同步命令：" + command);
+							}
+
+							try {
+								// 在命令发送前进行过滤操作
+								redisCommandFilterManager.beforeSendCommand(command, srcServer, descServer);
+
+								// 发送命令到目标服务器
+								RedisPacket responsePacket = redisConnection.sendCommand(command);
+								if (logger.isDebugEnabled()) {
+									logger.debug("同步命令:" + command + " 响应结果：" + responsePacket.toString());
+								}
+								// 处理响应
+								boolean result = processResponsePacket(responsePacket);
+								if (logger.isDebugEnabled()) {
+									logger.debug("同步命令:" + command + (result ? " 成功" : " 失败"));
+								}
+								if (result) {
+									successCount++;
+								}
+								// 在命令发送后进行过滤操作
+								redisCommandFilterManager.afterSendCommand(command, result, srcServer, descServer);
+							} catch (RedisCommandRejectedException e) {
+								logger.info("命令：" + command + " 被拦截器拦截");
+							} catch (RedisProtocolException e) {
+								logger.error("发送命令到目标服务器出现问题", e);
+							}
+						}
+						redisConnection.close();
+						return successCount;
+					}
+				});
+			}
+
+			// 检查响应结果
+
+			int result = 0;
+			for (int i = 0; i < rdbCommandSynConnectionCount; i++) {
+				result += execcomp.take().get();
+			}
+			if (result != commandCount) {
+				logger.error("同步RDB失败，应同步命令数：" + commandCount + " 实际同步命令数：" + result);
+			}
+		} catch (InterruptedException e1) {
+			logger.error(e1.getMessage(), e1);
+		} catch (ExecutionException e1) {
+			logger.error(e1.getMessage(), e1);
+		} finally {
+			executorService.shutdown();
 		}
 	}
 
@@ -258,4 +360,5 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 		}
 		return true;
 	}
+
 }
