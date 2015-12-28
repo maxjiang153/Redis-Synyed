@@ -94,4 +94,42 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>src/main/resources/*</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>assemble</id>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<phase>package</phase>
+					</execution>
+				</executions>
+				<configuration>
+					<descriptors>
+						<descriptor>${basedir}/src/main/assembly/package.xml</descriptor>
+					</descriptors>
+					<finalName>Synyed-Agent</finalName>
+					<outputDirectory>${project.parent.build.directory}</outputDirectory>
+					<appendAssemblyId>false</appendAssemblyId>
+					<attach>false</attach>
+					<archiverConfig>
+						<defaultDirectoryMode>0755</defaultDirectoryMode>
+					</archiverConfig>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 </project>

@@ -1,0 +1,230 @@
+#!/bin/bash
+
+#
+# Synyed-Agent
+#
+# chkconfig: 2345 99 1
+# description: Synyed-Agent
+# config: ${base}/conf/application.properties
+#
+
+CMD=$1
+RETVAL=0
+SERVER_RUN_USER=root
+
+darwin=false;
+linux=false;
+
+BOOTUP=color
+RES_COL=60
+
+MOVE_TO_COL="echo -en \\033[${RES_COL}G"
+SETCOLOR_SUCCESS="echo -en \\033[1;32m"
+SETCOLOR_FAILURE="echo -en \\033[1;31m"
+SETCOLOR_WARNING="echo -en \\033[1;33m"
+SETCOLOR_NORMAL="echo -en \\033[0;39m"
+
+action() {
+  local STRING rc
+
+  STRING=$1
+  echo -n "$STRING "
+  shift
+  "$@" && success $"$STRING" || failure $"$STRING"
+  rc=$?
+  echo
+  return $rc
+}
+
+# Log that something succeeded
+success() {
+  [ "$BOOTUP" != "verbose" -a -z "${LSB:-}" ] && echo_success
+  return 0
+}
+
+# Log that something failed
+failure() {
+  local rc=$?
+  [ "$BOOTUP" != "verbose" -a -z "${LSB:-}" ] && echo_failure
+  [ -x /bin/plymouth ] && /bin/plymouth --details
+  return $rc
+}
+
+echo_success() {
+  [ "$BOOTUP" = "color" ] && $MOVE_TO_COL
+  echo -n "["
+  [ "$BOOTUP" = "color" ] && $SETCOLOR_SUCCESS
+  echo -n $"  OK  "
+  [ "$BOOTUP" = "color" ] && $SETCOLOR_NORMAL
+  echo -n "]"
+  echo -ne "\r"
+  return 0
+}
+
+echo_failure() {
+  [ "$BOOTUP" = "color" ] && $MOVE_TO_COL
+  echo -n "["
+  [ "$BOOTUP" = "color" ] && $SETCOLOR_FAILURE
+  echo -n $"FAILED"
+  [ "$BOOTUP" = "color" ] && $SETCOLOR_NORMAL
+  echo -n "]"
+  echo -ne "\r"
+  return 1
+}
+
+
+
+case "`uname`" in
+  Darwin*) darwin=true
+           if [ -z "$JAVA_HOME" ] ; then
+             JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home
+           fi
+           ;;
+  Linux*) linux=true
+          if [ -z "$JAVA_HOME" ]; then
+              shopt -s nullglob
+              jdks=`ls -r1d /usr/java/j* /usr/lib/jvm/* 2>/dev/null`
+              for jdk in $jdks; do
+                if [ -f "$jdk/bin/java" ]; then
+                  JAVA_HOME="$jdk"
+                  break
+                fi
+              done
+          fi
+          ;;
+esac
+
+PRG="$0"
+progname=`basename "$0$"`
+
+ while [ -h "$PRG" ] ; do
+  	ls=`ls -ld "$PRG"`
+   	link=`expr "$ls" : '.*-> \(.*\)$'`
+  	if expr "$link" : '/.*' > /dev/null; then
+    		PRG="$link"
+    	else
+    		PRG=`dirname "$PRG"`"/$link"
+    	fi
+ done
+
+SERVER_HOME=`dirname "$PRG"`/..
+
+SERVER_LOG="${SERVER_HOME}/logs"
+
+SERVER_OPTS="${SERVER_OPTS} -DSynyed-Agent -DSERVER_LOG=${SERVER_LOG} -Xms2048m -Xmx3072m -Xmn1024m -XX:SurvivorRatio=2 -XX:PermSize=96m -XX:MaxPermSize=256m -Xss256k -XX:-UseAdaptiveSizePolicy -XX:MaxTenuringThreshold=15 -XX:+DisableExplicitGC -XX:+UseConcMarkSweepGC -XX:+CMSParallelRemarkEnabled -XX:+UseCMSCompactAtFullCollection -XX:+UseFastAccessorMethods -XX:+UseCMSInitiatingOccupancyOnly -XX:+HeapDumpOnOutOfMemoryError"
+
+SERVER_LIB="${SERVER_HOME}/lib"
+
+if [ -z "$JAVACMD" ] ; then
+  	if [ -n "$JAVA_HOME"  ] ; then
+    		if [ -x "$JAVA_HOME/jre/sh/java" ] ; then
+      			JAVACMD="$JAVA_HOME/jre/sh/java"
+    		else
+      			JAVACMD="$JAVA_HOME/bin/java"
+    		fi
+  	else
+    		JAVACMD=`which java 2> /dev/null `
+    		if [ -z "$JAVACMD" ] ; then
+        		JAVACMD=java
+    		fi
+  	fi
+fi
+
+if [ ! -x "$JAVACMD" ] ; then
+  	echo "Error: JAVA_HOME is not defined correctly."
+  	echo "  We cannot execute $JAVACMD"
+  	RETVAL=1
+	exit $RETVAL
+fi
+
+
+LOCALCLASSPATH=""
+
+for i in $SERVER_LIB/*;
+do LOCALCLASSPATH=$i:"$LOCALCLASSPATH";
+done
+LOCALCLASSPATH="$SERVER_HOME/conf:$LOCALCLASSPATH";
+
+exec_command="$JAVACMD -server $SERVER_OPTS -classpath \"$LOCALCLASSPATH\" com.wmz7year.synyed.Booter"
+
+findPID(){
+	 echo `ps ax --width=1000 | grep java | grep Synyed-Agent | awk '{print $1}'`
+}
+
+start(){
+	PID=$(findPID)
+        if [ -n "$PID" ]; then
+            echo "Synyed-Agent is already running"                                 
+            RETVAL=1
+            return
+        fi
+
+	echo -n "Startup Synyed-Agent"
+	
+	rm -f $SERVER_LOG/nohup.out
+	su -s /bin/sh -c "nohup $exec_command > $SERVER_LOG/nohup.out 2>&1 &" $SERVER_RUN_USER
+	RETVAL=$?
+	action $"" /bin/true
+	
+}
+
+stop(){
+	echo -n "Shutting down Synyed-Agent.."
+	PID=$(findPID)
+	if [ -n "$PID" ]; then
+		kill -9 $PID
+		action $"" /bin/true
+	else
+		action $"" /bin/false
+		echo "Synyed-Agent is not running"
+	fi
+
+	RETVAL=$?
+}
+
+restart(){
+	stop
+	sleep 5
+	start
+}
+
+status(){
+	PID=$(findPID)
+	if [ -n "$PID" ] ; then 
+		echo "Synyed-Agent is running"
+	else
+		echo "Synyed-Agent is not running"
+	fi
+}
+
+updateRestart() {
+	stop
+	
+	sleep 5
+
+	su -s /bin/sh -c "nohup $exec_command > $SERVER_LOG/nohup.out 2>&1 &" $SERVER_RUN_USER
+	echo "update restart success"
+}
+
+case "$CMD" in
+	start)
+		start
+	;;
+	stop)
+		stop
+	;;
+	restart)
+		restart
+	;;
+	status)
+		status
+	;;
+	updateRestart)
+		updateRestart
+	;;
+	*)
+		echo "Usage $0 {start|stop|restart|status}"
+		RETVAL=1
+esac
+
+exit $RETVAL
