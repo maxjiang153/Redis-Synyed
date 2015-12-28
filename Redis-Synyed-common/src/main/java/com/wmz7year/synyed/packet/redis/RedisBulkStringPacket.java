@@ -28,8 +28,11 @@ public class RedisBulkStringPacket extends RedisPacket {
 	}
 
 	public void setData(byte[] data) {
-		super.setCommand(new String(data));
 		this.data = data;
+	}
+
+	public String getContent() {
+		return new String(data);
 	}
 
 	/*
@@ -37,7 +40,7 @@ public class RedisBulkStringPacket extends RedisPacket {
 	 */
 	@Override
 	public String toString() {
-		return "RedisBulkStringPacket [data=" + new String(data) + "]";
+		return "RedisBulkStringPacket [data=" + getContent() + "]";
 	}
 
 }
