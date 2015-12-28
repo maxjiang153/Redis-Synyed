@@ -210,11 +210,11 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 			int commandCount = commands.size();
 			int pageSize = commandCount % rdbCommandSynConnectionCount == 0
 					? commandCount / rdbCommandSynConnectionCount : commandCount / rdbCommandSynConnectionCount + 1;
-
+			int pageCount = commandCount % pageSize == 0 ? commandCount / pageSize : commandCount / pageSize + 1;
 			// 对命令列表平均分页处理
-			for (int i = 0; i < rdbCommandSynConnectionCount; i++) {
+			for (int i = 0; i < pageCount; i++) {
 				final List<RedisCommand> subCommands;
-				if (i + 1 == rdbCommandSynConnectionCount) {
+				if (i + 1 == pageCount) {
 					subCommands = commands.subList(pageSize * i, commandCount);
 				} else {
 					subCommands = commands.subList(pageSize * i, pageSize * (i + 1));
