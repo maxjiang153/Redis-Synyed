@@ -74,6 +74,11 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 	private RedisPacketCommandParser packetCommandParser = new RedisPacketCommandParser();
 
 	/**
+	 * RDB文件是否处理过的标识为
+	 */
+	private boolean isRDBProcessed = false;
+
+	/**
 	 * rdb文件传输数据包执行同步的连接数量<br>
 	 * 由于RDB文件解析出的数据量巨大，可能产生太多命令<br>
 	 * 但是又没有数据写入顺序的问题 因此分不同的连接去执行
@@ -184,6 +189,7 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 		if (redisPacket instanceof RedisDataBaseTransferPacket) {
 			// 处理rdb文件传输命令
 			processRedisRDBTransferPacketCommands(commands);
+			isRDBProcessed = true;
 		} else {
 			for (RedisCommand command : commands) {
 				// 处理解析出的命令
@@ -343,4 +349,12 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 		return true;
 	}
 
+	/**
+	 * 判断RDB文件是否处理过的标识位<br>
+	 * 
+	 * @return true为处理过 false为未处理
+	 */
+	public boolean isRDBFileProcessed() {
+		return isRDBProcessed;
+	}
 }
