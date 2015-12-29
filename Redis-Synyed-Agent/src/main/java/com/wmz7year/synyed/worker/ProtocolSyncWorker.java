@@ -187,7 +187,7 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 		} else {
 			for (RedisCommand command : commands) {
 				// 处理解析出的命令
-				processCommand(command);
+				processCommand(this.descConnection, command);
 			}
 		}
 	}
@@ -231,34 +231,11 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 						RedisConnection redisConnection = createDefaultRedisConnection(descServer, 5000);
 						int successCount = 0;
 						for (RedisCommand command : subCommands) {
-
-							if (logger.isDebugEnabled()) {
-								logger.debug("开始处理同步命令：" + command);
-							}
-
 							try {
-								// 在命令发送前进行过滤操作
-								redisCommandFilterManager.beforeSendCommand(command, srcServer, descServer);
-
-								// 发送命令到目标服务器
-								RedisPacket responsePacket = redisConnection.sendCommand(command);
-								if (logger.isDebugEnabled()) {
-									logger.debug("同步命令:" + command + " 响应结果：" + responsePacket.toString());
-								}
-								// 处理响应
-								boolean result = processResponsePacket(responsePacket);
-								if (logger.isDebugEnabled()) {
-									logger.debug("同步命令:" + command + (result ? " 成功" : " 失败"));
-								}
-								if (result) {
-									successCount++;
-								}
-								// 在命令发送后进行过滤操作
-								redisCommandFilterManager.afterSendCommand(command, result, srcServer, descServer);
-							} catch (RedisCommandRejectedException e) {
-								logger.info("命令：" + command + " 被拦截器拦截");
-							} catch (RedisProtocolException e) {
-								logger.error("发送命令到目标服务器出现问题", e);
+								processCommand(redisConnection, command);
+								successCount++;
+							} catch (Exception e) {
+								throw e;
 							}
 						}
 						redisConnection.close();
@@ -291,10 +268,12 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 	 * 其次命令持久化到磁盘作为记录备份<br>
 	 * 最后发送到目标服务器并且校验响应结果
 	 * 
+	 * @param redisConnection
+	 *            redis连接对象
 	 * @param command
 	 *            需要处理的命令
 	 */
-	private void processCommand(RedisCommand command) {
+	private void processCommand(RedisConnection redisConnection, RedisCommand command) {
 		if (logger.isDebugEnabled()) {
 			logger.debug("开始处理同步命令：" + command);
 		}
@@ -304,7 +283,7 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 			redisCommandFilterManager.beforeSendCommand(command, srcServer, descServer);
 
 			// 发送命令到目标服务器
-			RedisPacket responsePacket = sendCommandToTargetServer(command);
+			RedisPacket responsePacket = sendCommandToTargetServer(redisConnection, command);
 			// 处理响应
 			boolean result = processResponsePacket(responsePacket);
 			if (logger.isDebugEnabled()) {
@@ -323,15 +302,18 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 	/**
 	 * 发送同步命令到目标服务器的方法
 	 * 
+	 * @param redisConnection
+	 *            redis连接对象
 	 * @param command
 	 *            需要发送的同步命令
 	 * @return 发送命令的响应结果
 	 * @throws RedisProtocolException
 	 *             当发送命令出现问题则抛出该异常
 	 */
-	private RedisPacket sendCommandToTargetServer(RedisCommand command) throws RedisProtocolException {
+	private RedisPacket sendCommandToTargetServer(RedisConnection redisConnection, RedisCommand command)
+			throws RedisProtocolException {
 		try {
-			RedisPacket responsePacket = descConnection.sendCommand(command);
+			RedisPacket responsePacket = redisConnection.sendCommand(command);
 			if (logger.isDebugEnabled()) {
 				logger.debug("同步命令:" + command + " 响应结果：" + responsePacket.toString());
 			}
