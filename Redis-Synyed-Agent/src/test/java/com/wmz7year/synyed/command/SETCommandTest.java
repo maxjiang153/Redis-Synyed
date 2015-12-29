@@ -11,6 +11,12 @@ import com.wmz7year.synyed.net.RedisConnection;
 import com.wmz7year.synyed.packet.redis.RedisBulkStringPacket;
 import com.wmz7year.synyed.packet.redis.RedisSimpleStringPacket;
 
+/**
+ * 普通set测试
+ * @author jiangwei (ydswcy513@gmail.com)
+ * @since 2015年12月29日 下午1:06:30
+ * @version V1.0
+ */
 public class SETCommandTest extends BasicCommandTest {
 	private static Logger logger = LoggerFactory.getLogger(SETCommandTest.class);
 	/**
