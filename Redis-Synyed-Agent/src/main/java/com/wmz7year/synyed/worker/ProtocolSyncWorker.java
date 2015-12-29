@@ -337,7 +337,7 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 			if (ERR.equals(simpleStringPacket.getCommand())) {
 				String errorInfo = new String(simpleStringPacket.getData());
 				logger.error("执行Redis命令失败 - " + errorInfo);
-				return true;
+				return false;
 			}
 		}
 		return true;
