@@ -189,7 +189,7 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 		if (redisPacket instanceof RedisDataBaseTransferPacket) {
 			// 处理rdb文件传输命令
 			processRedisRDBTransferPacketCommands(commands);
-			isRDBProcessed = true;
+			this.isRDBProcessed = true;
 		} else {
 			for (RedisCommand command : commands) {
 				// 处理解析出的命令
@@ -253,7 +253,7 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 			// 检查响应结果
 
 			int result = 0;
-			for (int i = 0; i < rdbCommandSynConnectionCount; i++) {
+			for (int i = 0; i < pageCount; i++) {
 				result += execcomp.take().get();
 			}
 			if (result != commandCount) {
