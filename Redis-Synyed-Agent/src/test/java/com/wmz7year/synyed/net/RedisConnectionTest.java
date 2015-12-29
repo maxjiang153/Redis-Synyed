@@ -1,9 +1,9 @@
 package com.wmz7year.synyed.net;
 
 import static org.junit.Assert.*;
-import static com.wmz7year.synyed.config.RedisServerConfig.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -27,13 +27,30 @@ import com.wmz7year.synyed.packet.redis.RedisPacket;
 public class RedisConnectionTest {
 
 	/**
+	 * 源服务器地址
+	 */
+	@Value("${protocol.src.host}")
+	private String srcHost;
+
+	/**
+	 * 源服务器端口
+	 */
+	@Value("${protocol.src.port}")
+	private int srcPort;
+
+	/**
+	 * 源服务器验证密码
+	 */
+	@Value("${protocol.src.auth}")
+	private String srcAuth;
+
+	/**
 	 * 测试连接到redis 使用密码
 	 */
 	@Test
 	public void testConnectUsingPasswordRedis() throws Exception {
 		RedisConnection connection = new DefaultRedisConnection();
-		connection.connect(REDIS_SRC_SERVER_HOST, REDIS_SRC_SERVER_PORT, REDIS_SRC_SERVER_PASSWORD,
-				REDIS_SRC_SERVER_TIMEOUT);
+		connection.connect(srcHost, srcPort, srcAuth, 5000);
 		connection.close();
 		assertTrue(true);
 	}
@@ -44,8 +61,7 @@ public class RedisConnectionTest {
 	@Test
 	public void testSendCommandToRedis() throws Exception {
 		RedisConnection connection = new DefaultRedisConnection();
-		connection.connect(REDIS_SRC_SERVER_HOST, REDIS_SRC_SERVER_PORT, REDIS_SRC_SERVER_PASSWORD,
-				REDIS_SRC_SERVER_TIMEOUT);
+		connection.connect(srcHost, srcPort, srcAuth, 5000);
 		RedisPacket response = connection.sendCommand(new RedisCommand(RedisCommandSymbol.PING));
 		assertEquals(response.getCommand(), "PONG");
 		connection.close();
@@ -68,8 +84,7 @@ public class RedisConnectionTest {
 			}
 		};
 		RedisConnection connection = new DefaultRedisConnection();
-		connection.connect(REDIS_SRC_SERVER_HOST, REDIS_SRC_SERVER_PORT, REDIS_SRC_SERVER_PASSWORD,
-				REDIS_SRC_SERVER_TIMEOUT);
+		connection.connect(srcHost, srcPort, srcAuth, 5000);
 		connection.sendCommand(new RedisCommand(RedisCommandSymbol.PING), listener);
 		connection.close();
 	}
