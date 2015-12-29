@@ -84,6 +84,11 @@ public class ProtocolManager extends BasicModule {
 	@Value("${protocol.desc.auth}")
 	private String descAuth;
 
+	/**
+	 * 执行同步操作的任务类
+	 */
+	private ProtocolSyncWorker syncWorker;
+
 	/*
 	 * @see com.wmz7year.synyed.module.Module#getName()
 	 */
@@ -119,10 +124,19 @@ public class ProtocolManager extends BasicModule {
 		RedisServer srcServer = new RedisServer(srcHost, srcPort, srcAuth);
 		RedisServer descServer = new RedisServer(descHost, descPort, descAuth);
 
-		ProtocolSyncWorker syncWorker = runtimeBeanFactory.createRuntimeProtocolSyncWorker();
+		syncWorker = runtimeBeanFactory.createRuntimeProtocolSyncWorker();
 		syncWorker.setSrcRedis(srcServer);
 		syncWorker.setDescRedis(descServer);
 		syncWorker.start();
+	}
+
+	/**
+	 * 判断RDB文件是否处理过的标识位<br>
+	 * 
+	 * @return true为处理过 false为未处理
+	 */
+	public boolean isRDBFileProcessed() {
+		return syncWorker.isRDBFileProcessed();
 	}
 
 	/*
@@ -133,6 +147,10 @@ public class ProtocolManager extends BasicModule {
 		// 关闭同步工作线程线程池
 		if (protocolSyncWorkerThreadPool != null) {
 			protocolSyncWorkerThreadPool.shutdown();
+		}
+		// 关闭同步任务
+		if (syncWorker != null) {
+			syncWorker.shutdown();
 		}
 	}
 
