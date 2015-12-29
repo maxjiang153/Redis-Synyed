@@ -12,6 +12,6 @@ buildNumber.properties
 .project
 .settings/
 
-Redis-Synyed-Agent/log/
+Redis-Synyed-Agent/logs/
 
 *.class

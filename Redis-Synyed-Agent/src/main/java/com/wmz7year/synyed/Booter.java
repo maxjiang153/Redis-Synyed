@@ -19,14 +19,6 @@ import org.springframework.context.annotation.Configuration;
 @EnableAutoConfiguration
 public class Booter {
 
-	// 配置日志输出路径
-	static {
-		String serverLogPath = System.getProperty("SERVER_LOG");
-		if (serverLogPath == null) {
-			System.setProperty("SERVER_LOG", "./log/");
-		}
-	}
-
 	public static void main(String[] args) {
 		SpringApplication.run(Booter.class, args);
 	}

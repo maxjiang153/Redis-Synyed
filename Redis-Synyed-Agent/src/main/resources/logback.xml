@@ -5,7 +5,7 @@
 
 
 	<appender name="debug" class="ch.qos.logback.core.FileAppender">
-		<file>${SERVER_LOG}/debug.log</file>
+		<file>logs/debug.log</file>
 		<append>true</append>
 		<prudent>false</prudent>
 		<encoder>
@@ -19,7 +19,7 @@
 	</appender>
 
 	<appender name="info" class="ch.qos.logback.core.FileAppender">
-		<file>${SERVER_LOG}/info.log</file>
+		<file>logs/info.log</file>
 		<append>true</append>
 		<prudent>false</prudent>
 		<encoder>
@@ -33,7 +33,7 @@
 	</appender>
 
 	<appender name="warn" class="ch.qos.logback.core.FileAppender">
-		<file>${SERVER_LOG}/warn.log</file>
+		<file>logs/warn.log</file>
 		<append>true</append>
 		<prudent>false</prudent>
 		<encoder>
@@ -47,7 +47,7 @@
 	</appender>
 
 	<appender name="error" class="ch.qos.logback.core.FileAppender">
-		<file>${SERVER_LOG}/error.log</file>
+		<file>logs/error.log</file>
 		<append>true</append>
 		<prudent>false</prudent>
 		<encoder>
