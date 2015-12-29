@@ -8,10 +8,9 @@ import static com.wmz7year.synyed.constant.RedisCommandSymbol.PING;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.mina.core.service.IoHandlerAdapter;
 import org.apache.mina.core.session.IdleStatus;
@@ -75,26 +74,14 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 	 * 连接超时时间
 	 */
 	private long connectionTimeOut;
-
-	/**
-	 * Redis命令执行锁<br>
-	 * 该锁的目的是保证同一时刻只有一个Redis命令在执行
-	 */
-	private ReentrantLock lock = new ReentrantLock();
-	/**
-	 * 获取到响应的新号对象
-	 */
-	private final Condition responseCondition = lock.newCondition();
-
-	/**
-	 * redis包响应对象<br>
-	 */
-	private RedisPacket response;
-
 	/**
 	 * redis响应监听器
 	 */
 	private RedisResponseListener listener;
+	/**
+	 * 响应结果队列
+	 */
+	private ArrayBlockingQueue<RedisPacket> responseQueue = new ArrayBlockingQueue<RedisPacket>(1);
 
 	public DefaultRedisConnection() {
 
@@ -162,11 +149,8 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 		if (listener != null) {
 			listener.receive(redisPacket);
 		} else {
-			this.response = redisPacket;
-			try {
-				this.responseCondition.signal();
-			} catch (Exception e) {
-				// ignore
+			if (!responseQueue.offer(redisPacket)) {
+				throw new IllegalStateException("无法将响应结果放入队列:" + redisPacket);
 			}
 		}
 	}
@@ -262,29 +246,18 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 		if (listener != null) {
 			throw new RedisProtocolException("当前已经设置Redis响应数据包收集器 无法执行Redis命令");
 		}
-		lock.lock();
+		// 发送命令到redis服务器
+		this.ioSession.write(command);
 		try {
-			// 清空上次响应
-			response = null;
-			// 发送命令到redis服务器
-			this.ioSession.write(command);
-			// 等待响应
-			try {
-				responseCondition.await(connectionTimeOut, TimeUnit.MICROSECONDS);
-			} catch (InterruptedException e) {
-				// ignore
+			RedisPacket responsePacket = responseQueue.poll(connectionTimeOut, TimeUnit.MILLISECONDS);
+			if (responsePacket != null) {
+				return responsePacket;
 			}
-
-			// 检查响应
-			if (response != null) {
-				return response;
-			} else {
-				throw new RedisProtocolException("redis响应超时");
-			}
-
-		} finally {
-			lock.unlock();
+		} catch (InterruptedException e) {
+			// ignore
 		}
+
+		throw new RedisProtocolException("发送命令响应超时：" + command.getCommand() + " 超时时间：" + this.connectionTimeOut);
 	}
 
 	/*
@@ -299,9 +272,6 @@ public class DefaultRedisConnection extends IoHandlerAdapter implements RedisCon
 		}
 
 		this.listener = listener;
-
-		// 清空上次响应
-		response = null;
 		// 发送命令到redis服务器
 		this.ioSession.write(command);
 	}
