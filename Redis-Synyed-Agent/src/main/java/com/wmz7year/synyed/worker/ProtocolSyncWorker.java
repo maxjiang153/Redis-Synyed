@@ -208,15 +208,18 @@ public class ProtocolSyncWorker implements RedisResponseListener {
 	 */
 	private void processRedisRDBTransferPacketCommands(List<RedisCommand> commands) {
 		logger.info("处理RDB文件同步连接数：" + rdbCommandSynConnectionCount);
+		// 计算每个线程处理的命令行数
+		int commandCount = commands.size();
+		if (commandCount == 0) {
+			return;
+		}
+		int pageSize = commandCount % rdbCommandSynConnectionCount == 0 ? commandCount / rdbCommandSynConnectionCount
+				: commandCount / rdbCommandSynConnectionCount + 1;
+		int pageCount = commandCount % pageSize == 0 ? commandCount / pageSize : commandCount / pageSize + 1;
 		// 开辟对应连接数的线程池
 		ExecutorService executorService = Executors.newFixedThreadPool(rdbCommandSynConnectionCount);
 		CompletionService<Integer> execcomp = new ExecutorCompletionService<Integer>(executorService);
 		try {
-			// 计算每个线程处理的命令行数
-			int commandCount = commands.size();
-			int pageSize = commandCount % rdbCommandSynConnectionCount == 0
-					? commandCount / rdbCommandSynConnectionCount : commandCount / rdbCommandSynConnectionCount + 1;
-			int pageCount = commandCount % pageSize == 0 ? commandCount / pageSize : commandCount / pageSize + 1;
 			// 对命令列表平均分页处理
 			for (int i = 0; i < pageCount; i++) {
 				final List<RedisCommand> subCommands;
